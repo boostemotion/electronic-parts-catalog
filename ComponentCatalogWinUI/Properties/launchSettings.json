@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "ComponentCatalogWinUI (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "ComponentCatalogWinUI (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

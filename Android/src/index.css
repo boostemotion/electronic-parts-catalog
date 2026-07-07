@@ -1,0 +1,59 @@
+:root {
+  --md-sys-color-primary: #0f6cbd;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #d6e9ff;
+  --md-sys-color-on-primary-container: #002a4d;
+  --md-sys-color-surface: #f6f9fc;
+  --md-sys-color-on-surface: #17212b;
+  --md-sys-color-surface-variant: #dbe4ee;
+  --md-sys-color-on-surface-variant: #4b5b6b;
+  --md-sys-color-outline: #748496;
+  --md-sys-color-surface-container: #edf3fa;
+  --md-sys-color-surface-container-high: #f8fbff;
+  
+  /* Corner Radius */
+  --md-shape-corner-small: 8px;
+  --md-shape-corner-medium: 12px;
+  --md-shape-corner-large: 16px;
+  --md-shape-corner-extra-large: 28px;
+  --md-shape-corner-full: 9999px;
+
+  /* Transition */
+  --md-motion-duration-short: 150ms;
+  --md-motion-duration-medium: 250ms;
+  --md-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  
+  font-family: "Roboto", "Segoe UI Variable Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  height: 100vh;
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#0F6CBD</color>
+    <color name="colorPrimaryDark">#084C87</color>
+    <color name="colorAccent">#49A3FF</color>
+    <color name="shellBackground">#F6F9FC</color>
+    <color name="shellNavigationBar">#EAF2FB</color>
+    <color name="shellSplashBackground">#D6E9FF</color>
+</resources>

@@ -1,0 +1,50 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.user
+*.userosscache
+*.swp
+*.tmp
+
+# Local toolchains
+.dotnet-sdk/
+.winappruntime/
+
+# .NET build outputs
+**/bin/
+**/obj/
+TestResults/
+
+# Node / Vite / Capacitor
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/.vite/
+Android/android/.gradle/
+Android/android/build/
+Android/android/app/build/
+Android/android/capacitor-cordova-android-plugins/build/
+Android/android/local.properties
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Android debug artifacts
+Android/android-device-screenshot-*.png
+Android/window_dump*.xml
+Android/dev-server.log
+
+# Local data
+*.db
+*.db-shm
+*.db-wal
+*.sqlite

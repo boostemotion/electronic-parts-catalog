@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="ComponentCatalogWinUI.Pages.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:ComponentCatalogWinUI.Pages"
+    xmlns:service="using:ComponentCatalogWinUI.Services"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer>
+        <StackPanel Padding="24,18,24,24" Spacing="16">
+            <StackPanel Spacing="6">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="设置" />
+                <TextBlock Style="{StaticResource MutedBodyTextStyle}" Text="SQLite 真源、JSON 快照、本地读写 API 和运行日志状态。" />
+            </StackPanel>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="数据源" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="Windows 端作为唯一写入真源，所有新增、编辑、删除和导入都会落到 SQLite。" />
+                    <TextBlock Text="{Binding DatabasePath}" TextWrapping="WrapWholeWords" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="打开数据目录" Click="OpenDataDirectoryButton_Click" />
+                        <Button Content="复制数据库路径" Click="CopyDatabasePathButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="导出与共享" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="catalog.json 作为 Android 只读查询端和其他应用接入的标准快照格式。" />
+                    <TextBlock Text="{Binding SnapshotPath}" TextWrapping="WrapWholeWords" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding ExportedAtDisplay}" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding CategoriesDisplay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="打开快照所在目录" Click="OpenSnapshotDirectoryButton_Click" />
+                        <Button Content="复制快照路径" Click="CopySnapshotPathButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="接口状态" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="本地 HTTP API 绑定 127.0.0.1，支持分类、搜索、详情、新增、覆盖和删除。" />
+                    <TextBlock Text="{Binding ApiStatusText}" TextWrapping="WrapWholeWords" />
+                    <Button Content="复制 API 地址" Click="CopyApiBaseUrlButton_Click" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="当前快照" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="当前导出的目录快照概览。" />
+                    <TextBlock Text="{Binding ComponentCountText}" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="运行日志" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="启动和页面初始化日志会写到这里；日志失败不会阻塞应用启动。" />
+                    <TextBlock Text="{Binding LogDirectory}" TextWrapping="WrapWholeWords" />
+                    <Button Content="打开日志目录" Click="OpenLogDirectoryButton_Click" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                x:Name="SettingsActionStatusText"
+                Style="{StaticResource SectionCaptionTextStyle}"
+                Text="就绪"
+                TextWrapping="Wrap" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

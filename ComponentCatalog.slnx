@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="ComponentCatalogCore.Tests/ComponentCatalogCore.Tests.csproj" />
+  <Project Path="ComponentCatalogCore/ComponentCatalogCore.csproj" />
+  <Project Path="ComponentCatalogWinUI/ComponentCatalogWinUI.csproj" />
+</Solution>
