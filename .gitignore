@@ -43,6 +43,10 @@ Android/android-device-screenshot-*.png
 Android/window_dump*.xml
 Android/dev-server.log
 
+# Local release bundle
+发布包/Android/*.apk
+发布包/Windows/
+
 # Local data
 *.db
 *.db-shm
