@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!--
+      The PC API address is configured at runtime, so Android's static domain
+      rules cannot express its private-LAN IP address. Do not add wildcard or
+      public-domain entries here; callers must use an explicitly configured
+      private-LAN endpoint.
+    -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

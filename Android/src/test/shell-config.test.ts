@@ -57,4 +57,10 @@ describe("android shell resources", () => {
     expect(mainActivity).toContain("BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE");
     expect(mainActivity).toContain("setAppearanceLightNavigationBars(true)");
   });
+
+  it("declares the package installer permission required by in-app APK updates", () => {
+    const manifest = readProjectFile("android/app/src/main/AndroidManifest.xml");
+
+    expect(manifest).toContain("android.permission.REQUEST_INSTALL_PACKAGES");
+  });
 });

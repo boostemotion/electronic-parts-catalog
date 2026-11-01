@@ -57,7 +57,7 @@ describe("Android catalog app", () => {
 
     await screen.findByText("随手查料");
     expect(screen.getByText("目录总数")).toBeInTheDocument();
-    expect(screen.getByText("分类数")).toBeInTheDocument();
+    expect(screen.getByText("大类数")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "筛选与排序" })).toBeInTheDocument();
     expect(screen.queryByText("移动查询端")).not.toBeInTheDocument();
     expect(screen.queryByText(/沿用 WinUI 3 的信息层次/)).not.toBeInTheDocument();
@@ -69,7 +69,7 @@ describe("Android catalog app", () => {
     render(<App />);
 
     expect(await screen.findByText("还没有元件目录")).toBeInTheDocument();
-    expect(screen.getByText("先去数据同步导入快照，或者从 Windows 端拉取目录。")).toBeInTheDocument();
+    expect(screen.getByText("请确认 Windows 已开启手机自动同步，然后重新查找目录。")).toBeInTheDocument();
     expect(screen.queryByText("3.3V 稳压器")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "前往同步" }));
@@ -115,6 +115,18 @@ describe("Android catalog app", () => {
     await user.click(screen.getByRole("button", { name: "元件目录" }));
     expect(await screen.findByText("随手查料")).toBeInTheDocument();
     expect(contentArea).toHaveAttribute("data-nav-direction", "backward");
+  });
+
+  it("separates the unified app version from the taxonomy protocol version", async () => {
+    window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
+    const user = userEvent.setup();
+
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "关于" }));
+
+    expect(await screen.findByText("v1.1 (code 4)")).toBeInTheDocument();
+    expect(screen.getByText("目录分类版本")).toBeInTheDocument();
+    expect(screen.getByText("v1")).toBeInTheDocument();
   });
 
   it("clears the active field focus when switching tabs", async () => {
@@ -170,19 +182,16 @@ describe("Android catalog app", () => {
     });
   });
 
-  it("filters results by Material 3 category chips", async () => {
+  it("filters results through the Material 3 taxonomy sheet", async () => {
     window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
     const user = userEvent.setup();
 
     render(<App />);
 
     await screen.findByText("随手查料");
-    await user.click(screen.getByRole("button", { name: "电阻" }));
-
-    await waitFor(() => {
-      expect(screen.getAllByText("10k 电阻").length).toBeGreaterThan(0);
-      expect(screen.queryByText("3.3V 稳压器")).not.toBeInTheDocument();
-    });
+    await user.click(screen.getByRole("button", { name: "筛选与排序" }));
+    expect(await screen.findByText("大类")).toBeInTheDocument();
+    expect(screen.getByText("持有状态")).toBeInTheDocument();
   });
 
   it("supports searching and shows component details", async () => {
@@ -235,7 +244,7 @@ describe("Android catalog app", () => {
     });
   });
 
-  it("uses an in-app confirmation dialog before deleting a component", async () => {
+  it("keeps component details read-only", async () => {
     window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
     const user = userEvent.setup();
 
@@ -243,39 +252,13 @@ describe("Android catalog app", () => {
 
     await screen.findByText("随手查料");
     await user.click(screen.getAllByText("3.3V 稳压器")[0]);
-    expect(await screen.findByText("删除元件")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "删除元件" }));
-
-    expect(await screen.findByText("确认删除元件")).toBeInTheDocument();
-    expect(screen.getByText(/将要删除 3\.3V 稳压器（AMS1117-3\.3）/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "确认删除" }));
-
-    expect(await screen.findByText("已删除该元件记录")).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.queryByText("3.3V 稳压器")).not.toBeInTheDocument();
-    });
+    expect(await screen.findByText("技术参数")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "删除元件" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "修改属性" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "新建元件" })).not.toBeInTheDocument();
   });
 
-  it("shows inline validation instead of browser alerts when saving an empty component", async () => {
-    window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
-    const user = userEvent.setup();
-
-    render(<App />);
-
-    await screen.findByText("随手查料");
-    await user.click(screen.getByRole("button", { name: "新建元件" }));
-    expect(await screen.findByText("新建元件")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "保存修改" }));
-
-    expect(await screen.findByText("请输入元件名称")).toBeInTheDocument();
-    expect(screen.queryByText("维护入口保留在次级层，不打散主查询流程。")).not.toBeInTheDocument();
-  });
-
-  it("shows a compact sync workspace focused on the import actions", async () => {
+  it("shows a read-only automatic discovery workspace without address or import controls", async () => {
     window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
     const user = userEvent.setup();
 
@@ -284,9 +267,10 @@ describe("Android catalog app", () => {
     await user.click(screen.getByRole("button", { name: /数据同步/ }));
 
     expect(await screen.findByText("同步")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "局域网" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "CSV 导入" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "JSON 导入" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Windows 自动同步" })).toBeInTheDocument();
+    expect(screen.queryByText("PC 端地址")).not.toBeInTheDocument();
+    expect(screen.queryByText("CSV 导入")).not.toBeInTheDocument();
+    expect(screen.queryByText("JSON 导入")).not.toBeInTheDocument();
     expect(screen.queryByText(/保持同一份目录/)).not.toBeInTheDocument();
     expect(screen.queryByText("同步方式")).not.toBeInTheDocument();
   });

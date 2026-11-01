@@ -1,0 +1,153 @@
+.md3-update-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 350; /* 调高 z-index 覆盖在 bottom-nav (z-index: 100) 之上 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 20px calc(24px + env(safe-area-inset-bottom, 0px));
+  background: rgba(15, 23, 42, 0.54);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.md3-update-prompt {
+  position: fixed; /* 固定定位以确保绝对居中且悬浮在所有页面元素之上 */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(100%, 360px); /* 宽度收缩至最适紧凑的 360px */
+  max-height: min(600px, calc(100dvh - 48px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))); /* 高度约束，防止超出视口并触发滚动 */
+  overflow-y: auto;
+  padding: 20px 20px 16px; /* 缩减内边距 */
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 48%, transparent);
+  border-radius: 24px; /* 适当减小圆角 */
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 96%, white);
+  color: var(--md-sys-color-on-surface);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+  animation: md3-update-enter 220ms var(--md-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.md3-update-prompt__hero {
+  display: grid;
+  place-items: center;
+  width: 48px; /* 英雄图标外层容器降到 48px */
+  height: 48px;
+  margin-bottom: 12px; /* 缩减 margin */
+  border-radius: 14px;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.md3-update-prompt__hero svg {
+  width: 24px; /* SVG 图标缩小为 24px */
+  height: 24px;
+}
+
+.md3-update-prompt__content {
+  min-width: 0;
+}
+
+.md3-update-prompt__eyebrow {
+  color: var(--md-sys-color-primary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.md3-update-prompt h2 {
+  margin: 6px 0 0;
+  font-size: 20px; /* 字号降低到 20px 以防在大字号下折行 */
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.md3-update-prompt__version,
+.md3-update-prompt__notes,
+.md3-update-prompt__hint {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.md3-update-prompt__version {
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.md3-update-prompt__notes {
+  margin-top: 12px; /* 降为 12px */
+  padding: 10px 12px; /* 稍微紧凑内边距 */
+  border-radius: 12px;
+  background: var(--md-sys-color-surface-container);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.md3-update-prompt__hint {
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 12px;
+}
+
+.md3-update-prompt__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.md3-update-button {
+  min-width: 0;
+  min-height: 44px; /* 降到 44px 保持在无障碍要求以上 */
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.md3-update-button:disabled {
+  opacity: 0.65;
+}
+
+.md3-update-button--text {
+  background: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-primary);
+}
+
+.md3-update-button--filled {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+@keyframes md3-update-enter {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@media (max-height: 620px) {
+  .md3-update-prompt {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .md3-update-prompt__hero {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+  }
+
+  .md3-update-prompt__hero svg {
+    width: 20px;
+    height: 20px;
+  }
+}

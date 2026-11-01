@@ -1,4 +1,41 @@
+import groovy.json.JsonSlurper
+import java.util.Properties
+
 apply plugin: 'com.android.application'
+
+def productVersion = new JsonSlurper().parse(file('../../../version.json'))
+def releaseSigningProperties = new Properties()
+def releaseSigningPropertiesPath = System.getenv('CATALOG_RELEASE_PROPERTIES_FILE')
+if (releaseSigningPropertiesPath?.trim()) {
+    def releaseSigningPropertiesFile = file(releaseSigningPropertiesPath.trim())
+    if (!releaseSigningPropertiesFile.isFile()) {
+        throw new GradleException('CATALOG_RELEASE_PROPERTIES_FILE must point to a readable external signing properties file.')
+    }
+    releaseSigningPropertiesFile.withInputStream { releaseSigningProperties.load(it) }
+}
+
+def releaseSigningValue = { String propertyName, String environmentName ->
+    def environmentValue = System.getenv(environmentName)?.trim()
+    if (environmentValue) {
+        return environmentValue
+    }
+    return releaseSigningProperties.getProperty(propertyName)?.trim()
+}
+
+def releaseSigningValues = [
+    storeFile: releaseSigningValue('storeFile', 'CATALOG_RELEASE_STORE_FILE'),
+    storePassword: releaseSigningValue('storePassword', 'CATALOG_RELEASE_STORE_PASSWORD'),
+    keyAlias: releaseSigningValue('keyAlias', 'CATALOG_RELEASE_KEY_ALIAS'),
+    keyPassword: releaseSigningValue('keyPassword', 'CATALOG_RELEASE_KEY_PASSWORD'),
+]
+def configuredReleaseSigningValues = releaseSigningValues.findAll { key, value -> value }
+if (!configuredReleaseSigningValues.isEmpty() && configuredReleaseSigningValues.size() != releaseSigningValues.size()) {
+    throw new GradleException('Android release signing configuration is incomplete. Configure all four CATALOG_RELEASE_* values or all four external properties.')
+}
+def hasReleaseSigningConfig = configuredReleaseSigningValues.size() == releaseSigningValues.size()
+if (hasReleaseSigningConfig && !file(releaseSigningValues.storeFile).isFile()) {
+    throw new GradleException('Android release keystore file does not exist.')
+}
 
 android {
     namespace = "com.partshelf.catalog"
@@ -7,8 +44,8 @@ android {
         applicationId "com.partshelf.catalog"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode productVersion.android.code
+        versionName productVersion.product.version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -16,10 +53,23 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    if (hasReleaseSigningConfig) {
+        signingConfigs {
+            release {
+                storeFile file(releaseSigningValues.storeFile)
+                storePassword releaseSigningValues.storePassword
+                keyAlias releaseSigningValues.keyAlias
+                keyPassword releaseSigningValues.keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigningConfig) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
