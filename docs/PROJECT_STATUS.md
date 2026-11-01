@@ -4,7 +4,7 @@
 
 ## 当前基线
 
-- 分支 `main`，无 remote，未 push；工作区干净。
+- 分支 `main`，远程 `origin` = `https://github.com/boostemotion/electronic-parts-catalog.git`（私有），已推送；工作区干净。
 - 本轮整理出 **26 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
 - 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **62/62**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
 - 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,219,895 字节，`versionCode 4` / `versionName 1.1`。
