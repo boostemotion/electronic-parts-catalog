@@ -1,5 +1,9 @@
 # Track 6 Windows backup and restore — TDD evidence
 
+> **历史文档（2026-07-13，已归档）**
+> 文中“88 tests”“URL ACL/固定测试端口”等结论是当时环境记录，现已过时；仅作 TDD 过程证据保留。
+> 当前状态与验证结果见 [../../PROJECT_STATUS.md](../../PROJECT_STATUS.md)。
+
 ## Source plan
 
 - `.hermes/plans/2026-07-13_005540-production-hardening.md` — Track 6

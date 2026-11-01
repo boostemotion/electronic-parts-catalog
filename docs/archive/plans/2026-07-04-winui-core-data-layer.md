@@ -1,5 +1,9 @@
 # WinUI Core Data Layer Implementation Plan
 
+> **历史文档（2026-07-04，已归档）**
+> 这是旧机器上的实施计划，文中 `G:\LegacyWorkspace\入库\...` 路径已过时，任务勾选状态不再维护，仅作过程参考。
+> 当前状态与验证结果见 [../../PROJECT_STATUS.md](../../PROJECT_STATUS.md)，文档索引见 [../README.md](../README.md)。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give the WinUI 3 shell a real shared-core-backed catalog data layer with SQLite persistence and `catalog.json` export.

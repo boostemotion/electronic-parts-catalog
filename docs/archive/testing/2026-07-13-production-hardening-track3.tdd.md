@@ -1,5 +1,9 @@
 # Track 3 Android release hardening — TDD evidence
 
+> **历史文档（2026-07-13，已归档）**
+> 文中版本号（versionCode 2）与测试数量是当时记录，现已过时；仅作 TDD 过程证据保留。
+> 当前状态与验证结果见 [../../PROJECT_STATUS.md](../../PROJECT_STATUS.md)。
+
 ## Source plan
 
 - `.hermes/plans/2026-07-13_005540-production-hardening.md`

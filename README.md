@@ -13,7 +13,7 @@
 - `scripts/`
   版本同步、Android 发布、发布/一致性校验脚本。
 - `docs/`
-  设计与测试文档；当前验证状态见 [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)。
+  文档索引：[docs/README.md](docs/README.md)；当前状态见 [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)，历史计划与测试证据归档在 `docs/archive/`。
 
 ## 数据与版本
 
