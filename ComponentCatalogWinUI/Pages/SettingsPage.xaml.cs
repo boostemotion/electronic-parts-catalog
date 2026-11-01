@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using ComponentCatalogCore.Storage;
+using ComponentCatalogCore.Transport;
 using ComponentCatalogWinUI.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -224,7 +225,25 @@ public sealed partial class SettingsPage : Page
                 return;
             }
 
-            var settings = new CatalogLanSettings(CatalogLanSettings.CurrentSchemaVersion, enabled, selectedAddress);
+            var apiPort = (int)Math.Round(ApiPortNumberBox.Value);
+            var discoveryPort = (int)Math.Round(DiscoveryPortNumberBox.Value);
+            try
+            {
+                CatalogNetworkPorts.ValidatePair(apiPort, discoveryPort);
+            }
+            catch (Exception portException)
+            {
+                SettingsActionStatusText.Text = $"端口设置无效：{portException.Message}";
+                return;
+            }
+
+            var settings = new CatalogLanSettings
+            {
+                LanEnabled = enabled,
+                SelectedAddress = selectedAddress,
+                ApiPort = apiPort,
+                DiscoveryPort = discoveryPort,
+            };
             await WorkspaceService.ApplyLanSettingsAsync(settings);
             LoadLanControls();
             SettingsActionStatusText.Text = enabled ? "手机只读同步已开启。" : "手机访问已关闭；本机管理接口仍在运行。";
@@ -271,8 +290,9 @@ public sealed partial class SettingsPage : Page
     {
         try
         {
+            var settings = CatalogStoragePaths.ReadLanSettings();
             await WorkspaceService.StopApiAsync();
-            SettingsActionStatusText.Text = $"已释放 HTTP {CatalogWorkspaceService.FixedApiPort} 和 UDP {CatalogWorkspaceService.FixedDiscoveryPort} 端口。";
+            SettingsActionStatusText.Text = $"已释放 HTTP {settings.ApiPort} 和 UDP {settings.DiscoveryPort} 端口。";
         }
         catch (Exception ex)
         {
@@ -284,9 +304,10 @@ public sealed partial class SettingsPage : Page
     private void ShowFirewallGuidanceButton_Click(object sender, RoutedEventArgs e)
     {
         var address = (LanAddressComboBox.SelectedItem as CatalogNetworkAddress)?.Address ?? "<选定私有IPv4>";
+        var settings = CatalogStoragePaths.ReadLanSettings();
         SettingsActionStatusText.Text =
-            $"若手机无法连接，请由管理员为明确地址配置 URL ACL，例如：netsh http add urlacl url=http://{address}:{CatalogWorkspaceService.FixedApiPort}/ user=<当前Windows用户>；" +
-            "并在 Windows 防火墙允许此端口的专用网络入站规则。本程序不会自动执行这些操作。";
+            $"若手机无法连接，请由管理员为明确地址配置 URL ACL，例如：netsh http add urlacl url=http://{address}:{settings.ApiPort}/ user=<当前Windows用户>；" +
+            $"并在 Windows 防火墙允许 HTTP {settings.ApiPort} 与 UDP {settings.DiscoveryPort} 的专用网络入站规则。本程序不会自动执行这些操作。";
     }
 
     private void LoadLanControls()
@@ -301,6 +322,8 @@ public sealed partial class SettingsPage : Page
         {
             LanAddressComboBox.ItemsSource = addresses;
             LanAddressComboBox.SelectedValue = selectedAddress;
+            ApiPortNumberBox.Value = settings.ApiPort;
+            DiscoveryPortNumberBox.Value = settings.DiscoveryPort;
             PhoneSyncToggle.IsOn = settings.LanEnabled;
         }
         finally

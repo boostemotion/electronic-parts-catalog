@@ -91,13 +91,15 @@ public static class CatalogStoragePaths
             }
 
             var settings = JsonSerializer.Deserialize<CatalogLanSettings>(File.ReadAllText(LanSettingsPath), LanSettingsJsonOptions);
-            if (settings is null || settings.SchemaVersion != CatalogLanSettings.CurrentSchemaVersion ||
-                (!string.IsNullOrWhiteSpace(settings.SelectedAddress) && !CatalogApiBindingOptions.IsPrivateIpv4(settings.SelectedAddress)))
+            if (settings is null ||
+                settings.SchemaVersion is < CatalogLanSettings.OldestSupportedSchemaVersion or > CatalogLanSettings.CurrentSchemaVersion ||
+                (!string.IsNullOrWhiteSpace(settings.SelectedAddress) && !CatalogApiBindingOptions.IsPrivateIpv4(settings.SelectedAddress)) ||
+                !CatalogNetworkPorts.IsValidPair(settings.ApiPort, settings.DiscoveryPort))
             {
                 return CatalogLanSettings.Disabled;
             }
 
-            return settings;
+            return settings with { SchemaVersion = CatalogLanSettings.CurrentSchemaVersion };
         }
         catch (IOException)
         {
@@ -118,7 +120,8 @@ public static class CatalogStoragePaths
         ArgumentNullException.ThrowIfNull(settings);
         if (settings.SchemaVersion != CatalogLanSettings.CurrentSchemaVersion ||
             (!string.IsNullOrWhiteSpace(settings.SelectedAddress) && !CatalogApiBindingOptions.IsPrivateIpv4(settings.SelectedAddress)) ||
-            (settings.LanEnabled && string.IsNullOrWhiteSpace(settings.SelectedAddress)))
+            (settings.LanEnabled && string.IsNullOrWhiteSpace(settings.SelectedAddress)) ||
+            !CatalogNetworkPorts.IsValidPair(settings.ApiPort, settings.DiscoveryPort))
         {
             throw new ArgumentException("LAN settings are invalid.", nameof(settings));
         }

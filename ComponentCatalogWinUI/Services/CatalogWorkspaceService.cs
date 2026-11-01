@@ -12,8 +12,8 @@ namespace ComponentCatalogWinUI.Services;
 public sealed class CatalogWorkspaceService : ICatalogRestoreLifecycle
 {
     private static readonly Lazy<CatalogWorkspaceService> LazyCurrent = new(() => new CatalogWorkspaceService());
-    public const int FixedApiPort = CatalogApiBindingOptions.DefaultPort;
-    public const int FixedDiscoveryPort = MobileDiscoveryProtocol.DefaultPort;
+    public const int DefaultApiPort = CatalogNetworkPorts.DefaultApiPort;
+    public const int DefaultDiscoveryPort = CatalogNetworkPorts.DefaultDiscoveryPort;
 
     private readonly SemaphoreSlim _initializationLock = new(1, 1);
     private CatalogRepository _repository;
@@ -129,7 +129,13 @@ public sealed class CatalogWorkspaceService : ICatalogRestoreLifecycle
                 AppLogger.WriteStartup($"Api.LanStart.Error {exception.Message}");
                 try
                 {
-                    var disabledSettings = new CatalogLanSettings(CatalogLanSettings.CurrentSchemaVersion, false, settings.SelectedAddress);
+                    var disabledSettings = new CatalogLanSettings
+                    {
+                        LanEnabled = false,
+                        SelectedAddress = settings.SelectedAddress,
+                        ApiPort = settings.ApiPort,
+                        DiscoveryPort = settings.DiscoveryPort,
+                    };
                     await StartApiCoreAsync(disabledSettings, "手机访问启动失败；已恢复仅本机访问。请检查高级诊断中的 URL ACL 和 Windows 防火墙。");
                     CatalogStoragePaths.SaveLanSettings(disabledSettings);
                 }
@@ -334,7 +340,13 @@ public sealed class CatalogWorkspaceService : ICatalogRestoreLifecycle
         catch (Exception exception) when (settings.LanEnabled)
         {
             AppLogger.WriteStartup($"Api.LanStart.Error {exception.Message}");
-            var disabledSettings = new CatalogLanSettings(CatalogLanSettings.CurrentSchemaVersion, false, settings.SelectedAddress);
+            var disabledSettings = new CatalogLanSettings
+            {
+                LanEnabled = false,
+                SelectedAddress = settings.SelectedAddress,
+                ApiPort = settings.ApiPort,
+                DiscoveryPort = settings.DiscoveryPort,
+            };
             await StartApiCoreAsync(disabledSettings, "手机访问启动失败；已恢复仅本机访问。请检查高级诊断中的 URL ACL 和 Windows 防火墙。");
             CatalogStoragePaths.SaveLanSettings(disabledSettings);
         }
@@ -354,7 +366,7 @@ public sealed class CatalogWorkspaceService : ICatalogRestoreLifecycle
             throw new InvalidOperationException("所选局域网地址已失效。请选择当前可用的私有 IPv4 地址。");
         }
 
-        var bindingOptions = new CatalogApiBindingOptions(FixedApiPort, canUseLan, canUseLan ? settings.SelectedAddress : null);
+        var bindingOptions = new CatalogApiBindingOptions(settings.ApiPort, canUseLan, canUseLan ? settings.SelectedAddress : null);
         var token = CatalogStoragePaths.GetOrCreateApiToken();
         CatalogApiServer? apiServer = null;
         MobileDiscoveryServer? discoveryServer = null;
@@ -371,7 +383,7 @@ public sealed class CatalogWorkspaceService : ICatalogRestoreLifecycle
 
             if (canUseLan)
             {
-                discoveryServer = await MobileDiscoveryServer.StartAsync(IPAddress.Parse(settings.SelectedAddress!), FixedApiPort, FixedDiscoveryPort);
+                discoveryServer = await MobileDiscoveryServer.StartAsync(IPAddress.Parse(settings.SelectedAddress!), settings.ApiPort, settings.DiscoveryPort);
             }
 
             _catalogChangedHandler = catalogChangedHandler;
