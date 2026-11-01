@@ -19,7 +19,7 @@ Windows 仅从下列固定文件提供 Android 更新；服务器不会根据 UR
 - `发布包/Android/app-release.apk`
 - `发布包/Android/app-update.json`
 
-在项目根目录运行 `发布包/更新安卓安装包到发布包.bat`，或在 Windows 程序“设置”的“Android 安装包发布”卡片中选择“重新生成 Android 安装包”。脚本会构建调试 APK，将其复制到固定路径，并根据**复制后的实际文件**写入版本 `1.1`、`versionCode` `2`、字节数和 SHA-256 的 UTF-8 清单。
+在项目根目录运行 `发布包/更新安卓安装包到发布包.bat`，或在 Windows 程序“设置”的“Android 安装包发布”卡片中选择“重新生成 Android 安装包”。脚本要求提供外部签名材料（4 个 `CATALOG_RELEASE_*` 环境变量，或一个位于仓库外、包含 `storeFile`/`storePassword`/`keyAlias`/`keyPassword` 的 properties 文件），随后构建 **release** APK，经 zipalign、apksigner、aapt 校验后按 `version.json` 的版本（当前 `1.1` / `versionCode` `4`）、字节数、APK SHA-256 与签名证书 SHA-256 写入 UTF-8 清单；未配置签名时脚本会直接失败，不会发布调试包。
 
 启用手机访问且该 APK 存在时，固定只读端点为：
 
