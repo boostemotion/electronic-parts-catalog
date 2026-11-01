@@ -15,7 +15,10 @@ public sealed class ComponentRecord
     public string Id { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string PartNumber { get; set; } = string.Empty;
+    // Temporary compatibility display value. Validation derives it from SubCategoryId.
     public string Category { get; set; } = string.Empty;
+    public string MajorCategoryId { get; set; } = string.Empty;
+    public string SubCategoryId { get; set; } = string.Empty;
     public string Package { get; set; } = string.Empty;
     public IReadOnlyList<string> Aliases { get; set; } = [];
     public IReadOnlyList<string> Keywords { get; set; } = [];
@@ -31,6 +34,8 @@ public sealed class SearchQuery
 {
     public string Text { get; set; } = string.Empty;
     public string Category { get; set; } = "全部";
+    public string? MajorCategoryId { get; set; }
+    public string? SubCategoryId { get; set; }
     public string? Package { get; set; }
     public bool? Owned { get; set; }
     public string? AttributeText { get; set; }
@@ -47,7 +52,10 @@ public sealed class ImportRow
 {
     public string Name { get; set; } = string.Empty;
     public string PartNumber { get; set; } = string.Empty;
+    // Temporary compatibility display value. Validation derives it from SubCategoryId.
     public string Category { get; set; } = string.Empty;
+    public string MajorCategoryId { get; set; } = string.Empty;
+    public string SubCategoryId { get; set; } = string.Empty;
     public string Package { get; set; } = string.Empty;
     public bool Owned { get; set; }
     public IReadOnlyDictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>();
@@ -81,6 +89,8 @@ public sealed class ExportCatalogMeta
     public required string ExportedAt { get; init; }
     public required int ComponentCount { get; init; }
     public required IReadOnlyList<string> Categories { get; init; }
+    public required string TaxonomyVersion { get; init; }
+    public required IReadOnlyList<ComponentCatalogCore.Taxonomy.ComponentCategoryDefinition> MajorCategories { get; init; }
 }
 
 public static class ComponentSourceTypeContract

@@ -1,4 +1,5 @@
 using ComponentCatalogCore.Contracts;
+using ComponentCatalogCore.Taxonomy;
 
 namespace ComponentCatalogCore.Importing;
 
@@ -34,12 +35,35 @@ public static class CatalogImportService
                 continue;
             }
 
+            var package = record.GetValueOrDefault("package") ?? string.Empty;
+            var majorCategoryId = record.GetValueOrDefault("majorCategoryId")?.Trim() ?? string.Empty;
+            var subCategoryId = record.GetValueOrDefault("subCategoryId")?.Trim() ?? string.Empty;
+            ComponentCategoryAssignment? assignment;
+            if (string.IsNullOrEmpty(majorCategoryId) && string.IsNullOrEmpty(subCategoryId))
+            {
+                assignment = ComponentCategoryTaxonomy.ResolveLegacy(record.GetValueOrDefault("category"), package, partNumber);
+            }
+            else
+            {
+                assignment = ComponentCategoryTaxonomy.IsValidPair(majorCategoryId, subCategoryId)
+                    ? ComponentCategoryTaxonomy.GetAssignment(majorCategoryId, subCategoryId)
+                    : null;
+            }
+
+            if (assignment is null)
+            {
+                errors.Add(new ImportError { Line = index + 2, Reason = "category must resolve to a known taxonomy entry" });
+                continue;
+            }
+
             validRows.Add(new ImportRow
             {
                 Name = name,
                 PartNumber = partNumber,
-                Category = record.GetValueOrDefault("category") ?? "未分类",
-                Package = record.GetValueOrDefault("package") ?? string.Empty,
+                Category = assignment.SubCategory,
+                MajorCategoryId = assignment.MajorCategoryId,
+                SubCategoryId = assignment.SubCategoryId,
+                Package = package,
                 Owned = ParseBoolean(record.GetValueOrDefault("owned") ?? "false"),
                 Attributes = ParseAttributes(record.GetValueOrDefault("attributes") ?? string.Empty),
                 Aliases = SplitList(record.GetValueOrDefault("aliases") ?? string.Empty),

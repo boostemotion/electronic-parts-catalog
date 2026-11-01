@@ -22,6 +22,18 @@ public static class CatalogSearchService
         var matchedFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var score = 0;
 
+        if (!string.IsNullOrWhiteSpace(query.MajorCategoryId) &&
+            !string.Equals(component.MajorCategoryId, query.MajorCategoryId, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.SubCategoryId) &&
+            !string.Equals(component.SubCategoryId, query.SubCategoryId, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
         if (!string.Equals(query.Category, "全部", StringComparison.Ordinal) &&
             !string.Equals(component.Category, query.Category, StringComparison.Ordinal))
         {

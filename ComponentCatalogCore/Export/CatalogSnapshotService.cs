@@ -1,4 +1,5 @@
 using ComponentCatalogCore.Contracts;
+using ComponentCatalogCore.Taxonomy;
 
 namespace ComponentCatalogCore.Export;
 
@@ -20,6 +21,8 @@ public static class CatalogSnapshotService
                 ExportedAt = exportedAt,
                 ComponentCount = materialized.Count,
                 Categories = categories,
+                TaxonomyVersion = ComponentCategoryTaxonomy.Version,
+                MajorCategories = ComponentCategoryTaxonomy.MajorCategories,
             },
             Components = materialized,
         };

@@ -2,11 +2,32 @@ export type ComponentSourceType = "manual" | "csv-import";
 
 export type ComponentAttributeMap = Record<string, string>;
 
+export interface ComponentSubcategory {
+  id: string;
+  majorCategoryId: string;
+  label: string;
+  order: number;
+}
+
+export interface ComponentMajorCategory {
+  id: string;
+  label: string;
+  order: number;
+  subcategories: ComponentSubcategory[];
+}
+
+export interface ComponentTaxonomy {
+  version: string;
+  majorCategories: ComponentMajorCategory[];
+}
+
 export interface ComponentRecord {
   id: string;
   name: string;
   partNumber: string;
   category: string;
+  majorCategoryId?: string;
+  subCategoryId?: string;
   package: string;
   aliases: string[];
   keywords: string[];
@@ -21,6 +42,8 @@ export interface ComponentRecord {
 export interface SearchQuery {
   text: string;
   category: string;
+  majorCategoryId?: string;
+  subCategoryId?: string;
   package?: string;
   owned?: boolean;
   attributeText?: string;
@@ -61,6 +84,8 @@ export interface ExportCatalogSnapshot {
     exportedAt: string;
     componentCount: number;
     categories: string[];
+    taxonomyVersion: string;
+    majorCategories: ComponentMajorCategory[];
   };
   components: ComponentRecord[];
 }

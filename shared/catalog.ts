@@ -1,5 +1,7 @@
+import { TAXONOMY_VERSION } from "./version.generated";
 import type {
   ComponentAttributeMap,
+  ComponentMajorCategory,
   ComponentRecord,
   ExportCatalogSnapshot,
   ImportParseResult,
@@ -162,6 +164,14 @@ function calculateScore(component: ComponentRecord, query: SearchQuery): SearchR
     return null;
   }
 
+  if (query.majorCategoryId && component.majorCategoryId !== query.majorCategoryId) {
+    return null;
+  }
+
+  if (query.subCategoryId && component.subCategoryId !== query.subCategoryId) {
+    return null;
+  }
+
   if (query.package && component.package !== query.package) {
     return null;
   }
@@ -239,6 +249,10 @@ export function searchComponents(components: ComponentRecord[], query: SearchQue
 export function buildCatalogSnapshot(
   components: ComponentRecord[],
   exportedAt: string,
+  taxonomy: { taxonomyVersion: string; majorCategories: ComponentMajorCategory[] } = {
+    taxonomyVersion: TAXONOMY_VERSION,
+    majorCategories: [],
+  },
 ): ExportCatalogSnapshot {
   const categories = [...new Set(components.map((component) => component.category))].sort((left, right) =>
     left.localeCompare(right, "zh-CN"),
@@ -249,6 +263,8 @@ export function buildCatalogSnapshot(
       exportedAt,
       componentCount: components.length,
       categories,
+      taxonomyVersion: taxonomy.taxonomyVersion,
+      majorCategories: taxonomy.majorCategories,
     },
     components,
   };
