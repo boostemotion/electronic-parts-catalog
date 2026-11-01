@@ -21,11 +21,11 @@
 | .NET 测试（排除 API 宿主）Debug | `dotnet test ComponentCatalogCore.Tests -c Debug --filter "FullyQualifiedName!~CatalogApiServerTests"` | PASS — 104/104 |
 | .NET 测试（排除 API 宿主）Release | 同上，`-c Release` | PASS — 104/104 |
 | .NET 全量测试 | 不排除过滤 | 13 个 `CatalogApiServerTests` 受环境限制失败（见下），其余通过 |
-| Android 测试 | `vitest run --pool=threads`（工作区内） | PASS — 53/53（8 个测试文件） |
+| Android 测试 | `vitest run --pool=threads`（工作区内） | PASS — 60/60（10 个测试文件） |
 | Android 构建 | `npm run build` | PASS |
 | Android lint | `npm run lint` | PASS |
 | WinUI Release 构建 | `dotnet build ComponentCatalogWinUI -c Release` | PASS — 0 error |
-| 原生 Android release 构建 | Gradle 8.14 `assembleRelease`（工作区 staging + 本机缓存） | PASS — `app-release-unsigned.apk` 3,217,859 字节 |
+| 原生 Android release 构建 | Gradle 8.14 `assembleRelease`（工作区 staging + 本机缓存） | PASS — `app-release-unsigned.apk` 3,297,348 字节（含 Android 优化后的 Web 资源） |
 | Java 单元测试 | `java -cp … org.junit.runner.JUnitCore com.getcapacitor.myapp.ExampleUnitTest` | PASS — 4/4 |
 
 `NU1903` 高危公告（`SQLitePCLRaw.lib.e_sqlite3 2.1.10`，[GHSA-2m69-gcr7-jv3q](https://github.com/advisories/GHSA-2m69-gcr7-jv3q)）已通过升级 `Microsoft.Data.Sqlite` 至 10.0.14（传递依赖 SQLitePCLRaw 2.1.13）消除。
@@ -40,7 +40,7 @@
 
 本沙箱下 Java/Gradle 子进程只能写工作区、无法写 `D:\AI` 或 `%TEMP%`，因此原生验证采用“工作区内 staging + 本机 Gradle/Maven 缓存”方式完成：
 
-- 构建：`assembleRelease` **BUILD SUCCESSFUL**（123 tasks），产物 `app-release-unsigned.apk` **3,217,859 字节**。
+- 构建：`assembleRelease` **BUILD SUCCESSFUL**（123 tasks），产物 `app-release-unsigned.apk` **3,297,348 字节**（Android 查询端体验优化后的 Web 资源已通过 `npm run android:sync` 同步）。
 - APK 元数据（aapt，复制到 ASCII 路径后读取）：`com.partshelf.catalog` / `versionCode 4` / `versionName 1.1` / `compileSdk 36` / label `随手查料`。
 - 合并清单检查全部通过：`allowBackup=false`、`networkSecurityConfig=@xml/network_security_config`、4 个权限（INTERNET / ACCESS_WIFI_STATE / CHANGE_WIFI_MULTICAST_STATE / REQUEST_INSTALL_PACKAGES）、FileProvider 非导出且 `grantUriPermissions=true`。
 - Java 单元测试：Gradle `testDebugUnitTest` 的 Test Executor 在中文路径下启动失败（`ClassNotFoundException: GradleWorkerMain`），改用 `JUnitCore` 直接执行 **4/4** 通过（[ExampleUnitTest.java](../../Android/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java)）。
@@ -53,6 +53,14 @@
 3. **Vitest 默认 forks 池**：当前沙箱下子进程 spawn 被拒（`EPERM`），使用 `--pool=threads` 完成验证；普通开发机直接 `npm test` 即可。
 4. **WinUI GUI 冒烟未执行**：尝试启动未产生启动日志，改为 Debug/Release 构建与代码走查验证。
 5. `.hermes-work/` 约 5.3 GB（NuGet 包、JDK 21、Gradle 缓存/发行版、staging），已被忽略，可随时删除。
+
+## Android 查询端优化验证（2026-11-01 补充）
+
+- `npm test`（`vitest run --pool=threads`）：**60/60**（10 个文件，新增排序、样式契约、无障碍相关用例）。
+- `npm run build`：PASS（CSS 30.9 → 36.2 KB，含接入的 `motion.css`；JS 235.8 → 238.7 KB）。
+- `npm run lint`：PASS。
+- `npm run android:sync`：PASS（新 Web 资源已复制到 `Android/android/app/src/main/assets/public`，该目录由 `Android/android/.gitignore` 忽略）。
+- 原生 `assembleRelease`：PASS，APK 3,297,348 字节，构建日期 2026-11-01。
 
 ## 复跑建议
 

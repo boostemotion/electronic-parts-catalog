@@ -27,6 +27,14 @@ cd android
 .\gradlew.bat assembleDebug --no-daemon
 ```
 
+## 体验与性能
+
+- 目录支持关键词搜索、大类/子类/封装/持有/属性筛选，以及“匹配度 / 名称 / 型号 / 分类”排序（`src/catalog-sort.ts`）。
+- 动效统一由 `src/motion.css` 接管：页面转场、卡片阶梯入场（最多 300ms）、底部弹层与按压反馈，并遵循 `prefers-reduced-motion`。
+- 详情与筛选使用 `role="dialog"` / `aria-modal`，详情支持 Esc 与关闭按钮；搜索框提供 `aria-label`。
+- 同步页显示设备上次成功同步时间；更新检查失败可一键重试，“稍后”选择会持久化，同一版本不重复弹出。
+- 样式变量集中在 `src/index.css`，并由 `src/test/styles.test.ts` 保证不出现未定义变量。
+
 ## 版本
 
 产品 `1.1` / Android `versionCode 4` / taxonomy `v1`，由仓库根 `version.json` 单一真源生成（`scripts/version.mjs`），不要手工改动 `src/version.generated.ts`。

@@ -5,9 +5,9 @@
 ## 当前基线
 
 - 分支 `main`，无 remote，未 push；工作区干净。
-- 本轮整理出 **18 个本地提交**（下表），本次文档整理为随后一个独立 docs 提交；整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
-- 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **53/53**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
-- 原生 Android release 构建通过：`app-release-unsigned.apk` 3,217,859 字节，`versionCode 4` / `versionName 1.1`。
+- 本轮整理出 **19 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
+- 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **60/60**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
+- 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,297,348 字节，`versionCode 4` / `versionName 1.1`。
 - 版本单一真源 `version.json`：product `1.1` / Android code `4` / taxonomy `1`。
 
 ## 提交（按主题）
@@ -18,7 +18,8 @@
 | 修复 | `071c579`（导入页双仓储）、`f92cff7`（包过滤大小写） |
 | 依赖与工具链 | `15df6c7`（SQLite 10.0.14，消除 NU1903）、`a80432c`（Android 脚本路径可配置） |
 | 功能补齐 | `7ffcdea`（日志轮转）、`2001b91`（单实例+删除确认）、`332e27a`（BOM 数量/位号落库）、`0718e41`（端口可配置）、`96995e9`（快照恢复测试） |
-| 状态文档 | `a85550f`、`6693587`、`8a17bed`、本次文档整理提交 |
+| Android 体验优化 | `2536869`（排序、无障碍、同步反馈、动画与样式修复） |
+| 状态文档 | `a85550f`、`6693587`、`8a17bed`、`3028ae2` |
 
 ## 运行数据
 
@@ -35,6 +36,15 @@
 - 快照导出失败后的重启自动恢复测试（覆盖 SQLite 已提交、快照写入失败的窗口）。
 - `Microsoft.Data.Sqlite` 升级至 10.0.14，消除 `NU1903` 高危公告。
 
+## Android 查询端体验优化（2026-11-01）
+
+- **性能/动效**：列表卡片入场延迟由线性 `280 + index×36ms` 改为 motion.css 的有限阶梯（最多 300ms），55 条数据不再等待约 2.3 秒；统一由 `motion.css` 接管页面转场、卡片、弹层与按压反馈，并保留 `prefers-reduced-motion` 降级。
+- **样式修复**：补齐 7 个此前未定义的 MD3 变量（`surface-container-low`、`outline-variant`、`error`、`error-container`、`tertiary-container`、`on-tertiary-container`、`motion-easing-emphasized`），边框/错误提示/徽标颜色恢复生效；新增样式契约测试防止回归。
+- **排序**：筛选面板新增“匹配度 / 名称 / 型号 / 分类”四种排序，与筛选条件组合生效，重置筛选会同时恢复匹配度排序。
+- **无障碍**：详情与筛选面板补齐 `role="dialog"` / `aria-modal` / `aria-label`，详情支持 Esc 关闭与可见关闭按钮；搜索框增加 `aria-label`。
+- **同步与更新**：新增“设备同步”时间（跨启动保留）、同步失败可重试更新检查按钮；更新提示“稍后”选择持久化到 localStorage，同一版本不再反复弹出。
+- **清理**：删除未接入的 `ComponentEditSheet.tsx`、`AppDialog.tsx` 死代码；`layout-scroll.test.ts` 改为断言当前实际使用的同步面板样式。
+
 ## 环境限制（摘要，详见验证记录）
 
 - 本机 .NET 10 HttpListener 与 Windows 11 build 26200 不兼容，13 个 API 测试无法在本机跑通（非 URL ACL、非代码问题）。
@@ -46,6 +56,5 @@
 1. **P1 数据一致性（剩余）**：备份恢复仍只有 fake lifecycle 测试，建议补真实宿主生命周期/失败注入测试；数据库与快照双文件替换仍非原子（依靠安全备份和重启恢复兜底）。
 2. **P2 Android 只读边界**：保持只读查询；如确需现场修改，需要先设计管理鉴权与写入 API。
 3. **P2 Windows 收尾**：窗口尺寸/位置记忆、BOM 数量/位号的编辑 UI、Windows 发布产物打包。
-4. **P2 Android 体验优化**：列表入场动画线性延迟、未定义 MD3 CSS 变量、`motion.css` 未接入、缺失排序与无障碍属性、同步失败提示与重试。
-5. **P3 测试补强**：Java 插件行为、DELETE/PUT、移动端 HEAD/ETag/Range、中文搜索等；以及上述 .NET 10 HttpListener 阻塞的 13 个 API 测试需在目标机复验。
-6. **局域网安全**：按项目负责人判断，当前明文 HTTP + 短距离可信私网使用可接受，暂不改造。
+4. **P3 测试补强**：Java 插件行为、DELETE/PUT、移动端 HEAD/ETag/Range、中文搜索等；以及上述 .NET 10 HttpListener 阻塞的 13 个 API 测试需在目标机复验。
+5. **局域网安全**：按项目负责人判断，当前明文 HTTP + 短距离可信私网使用可接受，暂不改造。
