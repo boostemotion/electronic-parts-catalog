@@ -25,7 +25,7 @@
 | Android 构建 | `npm run build` | PASS |
 | Android lint | `npm run lint` | PASS |
 | WinUI Release 构建 | `dotnet build ComponentCatalogWinUI -c Release` | PASS — 0 error |
-| 原生 Android release 构建 | Gradle 8.14 `assembleRelease`（工作区 staging + 本机缓存） | PASS — `app-release-unsigned.apk` 3,297,348 字节（含 Android 优化后的 Web 资源） |
+| 原生 Android release 构建 | Gradle 8.14 `assembleRelease`（工作区 staging + 本机缓存） | PASS — `app-release-unsigned.apk` 3,219,319 字节（含 Android 优化后的 Web 资源） |
 | Java 单元测试 | `java -cp … org.junit.runner.JUnitCore com.getcapacitor.myapp.ExampleUnitTest` | PASS — 4/4 |
 
 `NU1903` 高危公告（`SQLitePCLRaw.lib.e_sqlite3 2.1.10`，[GHSA-2m69-gcr7-jv3q](https://github.com/advisories/GHSA-2m69-gcr7-jv3q)）已通过升级 `Microsoft.Data.Sqlite` 至 10.0.14（传递依赖 SQLitePCLRaw 2.1.13）消除。
@@ -40,7 +40,7 @@
 
 本沙箱下 Java/Gradle 子进程只能写工作区、无法写 `D:\AI` 或 `%TEMP%`，因此原生验证采用“工作区内 staging + 本机 Gradle/Maven 缓存”方式完成：
 
-- 构建：`assembleRelease` **BUILD SUCCESSFUL**（123 tasks），产物 `app-release-unsigned.apk` **3,297,348 字节**（Android 查询端体验优化后的 Web 资源已通过 `npm run android:sync` 同步）。
+- 构建：`assembleRelease` **BUILD SUCCESSFUL**（123 tasks），干净 staging 产物 `app-release-unsigned.apk` **3,219,319 字节**（Android 查询端体验优化后的 Web 资源已通过 `npm run android:sync` 同步）。
 - APK 元数据（aapt，复制到 ASCII 路径后读取）：`com.partshelf.catalog` / `versionCode 4` / `versionName 1.1` / `compileSdk 36` / label `随手查料`。
 - 合并清单检查全部通过：`allowBackup=false`、`networkSecurityConfig=@xml/network_security_config`、4 个权限（INTERNET / ACCESS_WIFI_STATE / CHANGE_WIFI_MULTICAST_STATE / REQUEST_INSTALL_PACKAGES）、FileProvider 非导出且 `grantUriPermissions=true`。
 - Java 单元测试：Gradle `testDebugUnitTest` 的 Test Executor 在中文路径下启动失败（`ClassNotFoundException: GradleWorkerMain`），改用 `JUnitCore` 直接执行 **4/4** 通过（[ExampleUnitTest.java](../../Android/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java)）。
@@ -60,7 +60,7 @@
 - `npm run build`：PASS（CSS 30.9 → 36.2 KB，含接入的 `motion.css`；JS 235.8 → 238.7 KB）。
 - `npm run lint`：PASS。
 - `npm run android:sync`：PASS（新 Web 资源已复制到 `Android/android/app/src/main/assets/public`，该目录由 `Android/android/.gitignore` 忽略）。
-- 原生 `assembleRelease`：PASS，APK 3,297,348 字节，构建日期 2026-11-01。
+- 原生 `assembleRelease`：PASS，干净 staging 构建 APK **3,219,319 字节**（2026-11-01）。
 
 ## 复跑建议
 

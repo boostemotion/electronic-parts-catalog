@@ -5,9 +5,9 @@
 ## 当前基线
 
 - 分支 `main`，无 remote，未 push；工作区干净。
-- 本轮整理出 **19 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
+- 本轮整理出 **23 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
 - 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **60/60**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
-- 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,297,348 字节，`versionCode 4` / `versionName 1.1`。
+- 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,219,319 字节，`versionCode 4` / `versionName 1.1`。
 - 版本单一真源 `version.json`：product `1.1` / Android code `4` / taxonomy `1`。
 
 ## 提交（按主题）
@@ -18,7 +18,7 @@
 | 修复 | `071c579`（导入页双仓储）、`f92cff7`（包过滤大小写） |
 | 依赖与工具链 | `15df6c7`（SQLite 10.0.14，消除 NU1903）、`a80432c`（Android 脚本路径可配置） |
 | 功能补齐 | `7ffcdea`（日志轮转）、`2001b91`（单实例+删除确认）、`332e27a`（BOM 数量/位号落库）、`0718e41`（端口可配置）、`96995e9`（快照恢复测试） |
-| Android 体验优化 | `2536869`（排序、无障碍、同步反馈、动画与样式修复） |
+| Android 体验优化 | `2536869`（排序、无障碍、同步反馈、动画与样式修复）、`722f414`（同步时间容错） |
 | 状态文档 | `a85550f`、`6693587`、`8a17bed`、`3028ae2` |
 
 ## 运行数据
