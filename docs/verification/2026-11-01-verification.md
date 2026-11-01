@@ -8,7 +8,7 @@
 - 本机无 NuGet 全局缓存且沙箱限制用户目录写入，.NET 命令统一把 `DOTNET_CLI_HOME`、`NUGET_PACKAGES`、`NUGET_HTTP_CACHE_PATH`、`TEMP`/`TMP` 指向 `.hermes-work/`（该目录已被 `.gitignore` 忽略）。
 - Node.js **24.18.1** / npm **11.16.0**；`Android/node_modules` 已存在，无需重新安装。
 - 原生 Android：Microsoft OpenJDK **21.0.13**（临时下载到 `.hermes-work/jdk21`）、Android SDK **36**（`D:\Android\Sdk`，只读引用）、Gradle **8.14**（由本机缓存复制到 `.hermes-work`）。
-- Git：分支 `main`，无 remote，未 push。
+- Git：分支 `main`，远程 `origin` 已配置并推送（`https://github.com/boostemotion/electronic-parts-catalog.git`）。
 
 ## 结果总表
 
