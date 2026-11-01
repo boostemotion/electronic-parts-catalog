@@ -10,14 +10,9 @@ namespace ComponentCatalogWinUI.Pages;
 
 public sealed partial class ImportPage : Page
 {
-    private readonly CatalogRepositoryOptions _repositoryOptions;
-
     public ImportPage()
     {
         InitializeComponent();
-
-        _repositoryOptions = CatalogStoragePaths.CreateRepositoryOptions();
-        CatalogRuntimeState.Current.UpdatePaths(_repositoryOptions.DatabasePath, _repositoryOptions.ExportPath);
     }
 
     private void CopyAiPromptButton_Click(object sender, RoutedEventArgs e)
@@ -81,9 +76,9 @@ public sealed partial class ImportPage : Page
 
         try
         {
-            await using var repository = new CatalogRepository(_repositoryOptions);
-            await repository.InitializeAsync();
-            var importSummary = await repository.ImportCsvWithSummaryAsync(csvText, duplicateStrategy);
+            var workspace = CatalogWorkspaceService.Current;
+            await workspace.EnsureInitializedAsync();
+            var importSummary = await workspace.Repository.ImportCsvWithSummaryAsync(csvText, duplicateStrategy);
             await CatalogRuntimeState.Current.RefreshSnapshotSummaryAsync();
 
             ImportStatusText.Text = importSummary.ErrorCount == 0
