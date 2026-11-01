@@ -1,11 +1,11 @@
 # 项目状态（2026-11-01）
 
-当前状态摘要。完整验证记录见 [verification/2026-11-01-verification.md](verification/2026-11-01-verification.md)，文档索引见 [README.md](README.md)。
+当前状态摘要。完整验证记录见 [verification/2026-11-01-verification.md](verification/2026-11-01-verification.md)，文档索引见 [README.md](README.md)。最后整理：2026-11-01。
 
 ## 当前基线
 
 - 分支 `main`，无 remote，未 push；工作区干净。
-- 本轮整理出 **25 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
+- 本轮整理出 **26 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
 - 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **62/62**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
 - 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,219,895 字节，`versionCode 4` / `versionName 1.1`。
 - 版本单一真源 `version.json`：product `1.1` / Android code `4` / taxonomy `1`。
@@ -38,7 +38,7 @@
 
 ## Android 查询端体验优化（2026-11-01）
 
-- **性能/动效**：列表卡片入场延迟由线性 `280 + index×36ms` 改为 motion.css 的有限阶梯（最多 300ms），55 条数据不再等待约 2.3 秒；统一由 `motion.css` 接管页面转场、卡片、弹层与按压反馈，并保留 `prefers-reduced-motion` 降级。
+- **性能/动效**：列表卡片入场延迟由线性 `280 + index×36ms` 改为 motion.css 的有限阶梯（最多 144ms），55 条数据不再等待约 2.3 秒；统一由 `motion.css` 接管页面转场、卡片、弹层与按压反馈，并保留 `prefers-reduced-motion` 降级。
 - **样式修复**：补齐 7 个此前未定义的 MD3 变量（`surface-container-low`、`outline-variant`、`error`、`error-container`、`tertiary-container`、`on-tertiary-container`、`motion-easing-emphasized`），边框/错误提示/徽标颜色恢复生效；新增样式契约测试防止回归。
 - **排序**：筛选面板新增“匹配度 / 名称 / 型号 / 分类”四种排序，与筛选条件组合生效，重置筛选会同时恢复匹配度排序。
 - **无障碍**：详情与筛选面板补齐 `role="dialog"` / `aria-modal` / `aria-label`，详情支持 Esc 关闭与可见关闭按钮；搜索框增加 `aria-label`。
