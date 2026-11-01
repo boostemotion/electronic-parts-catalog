@@ -5,7 +5,7 @@
 ## 当前基线
 
 - 分支 `main`，远程 `origin` = `https://github.com/boostemotion/electronic-parts-catalog.git`（公开），已推送；工作区干净。
-- `main` 共 **31 个提交**。2026-11-01 已按隐私要求重写历史：作者/提交者统一为 `boostemotion <noreply>`，并清理历史中的本机路径、旧内网地址与真实数据引用；旧提交哈希已失效，以 `git log` 为准。
+- `main` 已完成基线整理、功能补齐、Android 优化与隐私历史重写（提交数量以 `git log` 为准）。2026-11-01 按隐私要求重写历史：作者/提交者统一为 `boostemotion <noreply>`，并清理历史中的本机路径、旧内网地址与真实数据引用；旧提交哈希已失效，以 `git log` 为准。
 - 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **62/62**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
 - 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,219,895 字节，`versionCode 4` / `versionName 1.1`。
 - 版本单一真源 `version.json`：product `1.1` / Android code `4` / taxonomy `1`。
