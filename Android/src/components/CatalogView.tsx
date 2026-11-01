@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from "react";
 import type { ComponentMajorCategory, ComponentRecord, ExportCatalogSnapshot, SearchResult } from "@shared/types";
+import { sortOrderLabels, sortOrderOptions, type SortOrder } from "../catalog-sort";
 import { AppIcon } from "./AppIcon";
 import { useBottomSheetDragDismiss } from "./useBottomSheetDragDismiss";
 
@@ -38,6 +39,8 @@ interface CatalogViewProps {
   onSelectOwned: (owned: string) => void;
   attributeFilter: string;
   onAttributeFilterChange: (attr: string) => void;
+  sortOrder: SortOrder;
+  onSelectSortOrder: (sortOrder: SortOrder) => void;
   onOpenSync: () => void;
 }
 
@@ -65,6 +68,8 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   onSelectOwned,
   attributeFilter,
   onAttributeFilterChange,
+  sortOrder,
+  onSelectSortOrder,
   onOpenSync,
 }) => {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
@@ -92,12 +97,28 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     }
   }, [filterSheetOpen]);
 
+  useEffect(() => {
+    if (!filterSheetOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setFilterSheetOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [filterSheetOpen]);
+
   const resetFilters = () => {
     onSelectMajorCategoryId("");
     onSelectSubCategoryId("");
     onSelectPackage("全部封装");
     onSelectOwned("全部");
     onAttributeFilterChange("");
+    onSelectSortOrder("relevance");
   };
 
   const renderNestedList = (
@@ -166,6 +187,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
         <input
           type="search"
           className="md3-search-bar md3-search-bar-with-actions"
+          aria-label="搜索元件"
           value={searchText}
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="搜索型号、封装、参数..."
@@ -211,12 +233,11 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
             <p className="md3-empty-state__body">换个关键词或清空筛选。</p>
           </div>
         ) : (
-          results.map((result, index) => (
+          results.map((result) => (
             <button
               key={result.component.id}
               type="button"
               className="md3-catalog-card md3-animate-enter"
-              style={{ animationDelay: `${280 + index * 36}ms` }}
               onClick={() => onSelectComponent(result.component)}
             >
               <div className="md3-catalog-card__top">
@@ -256,6 +277,9 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           <div
             className={`md3-bottom-sheet md3-filter-sheet open ${filterSheetDrag.isDragging ? "dragging" : ""}`}
             style={filterSheetDrag.sheetStyle}
+            role="dialog"
+            aria-modal="true"
+            aria-label="筛选与排序"
           >
             <div className="md3-bottom-sheet-drag-handle" {...filterSheetDrag.dragHandleProps} />
             <div className="md3-bottom-sheet-content">
@@ -269,6 +293,23 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   </div>
 
                   <div className="md3-filter-column">
+                    <div className="md3-form-group">
+                      <label>排序</label>
+                      <div className="md3-segmented-buttons" role="group" aria-label="结果排序">
+                        {sortOrderOptions.map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            className={`md3-segmented-button ${sortOrder === option ? "active" : ""}`}
+                            aria-pressed={sortOrder === option}
+                            onClick={() => onSelectSortOrder(option)}
+                          >
+                            {sortOrderLabels[option]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <div className="md3-form-group">
                       <label>持有状态</label>
                       <div className="md3-segmented-buttons">

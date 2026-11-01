@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import type { ComponentMajorCategory, ComponentRecord } from "@shared/types";
 import { useBottomSheetDragDismiss } from "./useBottomSheetDragDismiss";
 
@@ -16,6 +16,21 @@ interface ComponentDetailSheetProps {
 export const ComponentDetailSheet: React.FC<ComponentDetailSheetProps> = ({ component, majorCategories, onClose }) => {
   const detailSheetDrag = useBottomSheetDragDismiss(onClose);
 
+  useEffect(() => {
+    if (!component) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [component, onClose]);
+
   if (!component) {
     return null;
   }
@@ -27,15 +42,26 @@ export const ComponentDetailSheet: React.FC<ComponentDetailSheetProps> = ({ comp
   return (
     <>
       <div className="md3-bottom-sheet-scrim open" onClick={onClose} style={detailSheetDrag.scrimStyle} />
-      <div className={`md3-bottom-sheet open ${detailSheetDrag.isDragging ? "dragging" : ""}`} style={detailSheetDrag.sheetStyle}>
+      <div
+        className={`md3-bottom-sheet open ${detailSheetDrag.isDragging ? "dragging" : ""}`}
+        style={detailSheetDrag.sheetStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="component-detail-title"
+      >
         <div className="md3-bottom-sheet-drag-handle" {...detailSheetDrag.dragHandleProps} />
         <div className="md3-bottom-sheet-content">
           <div className="md3-sheet-hero">
             <div>
-              <h2 className="md3-sheet-title">{component.name}</h2>
+              <h2 className="md3-sheet-title" id="component-detail-title">{component.name}</h2>
               <div className="md3-sheet-subtitle">{component.partNumber}</div>
             </div>
-            <span className={`md3-presence-pill ${component.owned ? "owned" : "missing"}`}>{component.owned ? "已持有" : "未持有"}</span>
+            <div className="md3-sheet-hero-actions">
+              <span className={`md3-presence-pill ${component.owned ? "owned" : "missing"}`}>{component.owned ? "已持有" : "未持有"}</span>
+              <button type="button" className="md3-icon-button md3-sheet-close" aria-label="关闭详情" onClick={onClose}>
+                ×
+              </button>
+            </div>
           </div>
 
           <div className="md3-detail-attributes">

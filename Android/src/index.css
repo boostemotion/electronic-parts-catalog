@@ -8,8 +8,15 @@
   --md-sys-color-surface-variant: #dbe4ee;
   --md-sys-color-on-surface-variant: #4b5b6b;
   --md-sys-color-outline: #748496;
+  --md-sys-color-outline-variant: #c3cfdb;
   --md-sys-color-surface-container: #edf3fa;
+  --md-sys-color-surface-container-low: #eef4fb;
   --md-sys-color-surface-container-high: #f8fbff;
+  --md-sys-color-error: #b3261e;
+  --md-sys-color-error-container: #f9dedc;
+  --md-sys-color-tertiary-container: #e8def8;
+  --md-sys-color-on-tertiary-container: #1d192b;
+  --md-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
   
   /* Corner Radius */
   --md-shape-corner-small: 8px;

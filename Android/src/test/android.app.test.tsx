@@ -275,6 +275,44 @@ describe("Android catalog app", () => {
     expect(screen.queryByText("同步方式")).not.toBeInTheDocument();
   });
 
+  it("sorts catalog results from the filter sheet", async () => {
+    window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await screen.findByText("随手查料");
+    const initialCards = document.querySelectorAll(".md3-catalog-card");
+    expect(initialCards[0]?.textContent).toContain("10k 电阻");
+
+    await user.click(screen.getByRole("button", { name: "筛选与排序" }));
+    await screen.findByText("排序");
+    await user.click(screen.getByRole("button", { name: "型号" }));
+    await user.click(screen.getByRole("button", { name: "查看 2 条结果" }));
+
+    await waitFor(() => {
+      const sortedCards = document.querySelectorAll(".md3-catalog-card");
+      expect(sortedCards[0]?.textContent).toContain("3.3V 稳压器");
+    });
+  });
+
+  it("exposes the detail sheet as a dialog and closes it with Escape", async () => {
+    window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await screen.findByText("随手查料");
+    await user.click(screen.getAllByText("3.3V 稳压器")[0]);
+
+    expect(await screen.findByRole("dialog", { name: "3.3V 稳压器" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    await waitFor(() => {
+      expect(screen.queryByText("技术参数")).not.toBeInTheDocument();
+    });
+  });
+
   it("shows a compact about page centered on snapshot status", async () => {
     window.localStorage.setItem("catalog.snapshot", JSON.stringify(snapshot));
     const user = userEvent.setup();

@@ -44,11 +44,11 @@ describe("Android scroll layout contract", () => {
     expect(appCss).toMatch(/@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.android-content-area\s*\{[\s\S]*?padding:\s*8px\s+14px\s+calc\(104px\s*\+\s*env\(safe-area-inset-bottom,\s*0px\)\);/s);
   });
 
-  it("keeps sync form labels, fields, and actions separated by clear vertical spacing", () => {
-    expect(appCss).toMatch(/\.md3-sync-card\s+\.md3-card-head\s*\{[^}]*margin-bottom:\s*10px;/s);
-    expect(appCss).toMatch(/\.md3-sync-card\s+\.md3-form-group\s*\{[^}]*gap:\s*10px;/s);
-    expect(appCss).toMatch(/\.md3-sync-card\s+\.md3-form-group\s*\+\s*\.md3-form-group\s*\{[^}]*margin-top:\s*12px;/s);
-    expect(appCss).toMatch(/\.md3-sync-action-row\s*\{[^}]*margin-top:\s*12px;/s);
-    expect(appCss).toMatch(/\.md3-sync-textarea\s*\{[^}]*resize:\s*none;/s);
+  it("keeps sync dashboard metrics and diagnostics compact and separated", () => {
+    expect(appCss).toMatch(/\.md3-sync-dashboard,\s*\.md3-about-dashboard\s*\{[^}]*display:\s*flex;/s);
+    expect(appCss).toMatch(/\.md3-sync-dashboard \.md3-dashboard-metrics\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*1fr\);/s);
+    expect(appCss).toMatch(/\.sync-diagnostic-row,[\s\S]*?\{[^}]*grid-template-columns:\s*72px minmax\(0,\s*1fr\);/s);
+    expect(appCss).toMatch(/\.sync-diagnostic-value,[\s\S]*?\{[^}]*overflow-wrap:\s*anywhere;/s);
+    expect(appCss).toMatch(/\.sync-status-notice\s*\{[^}]*color:\s*var\(--md-sys-color-error\);/s);
   });
 });

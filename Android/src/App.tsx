@@ -1,11 +1,13 @@
 import { startTransition, useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
 
 import type { ComponentRecord, ExportCatalogSnapshot, SearchResult } from "@shared/types";
+import { sortSearchResults, type SortOrder } from "./catalog-sort";
 import { loadSnapshot, saveSnapshot, searchSnapshot } from "./snapshot-store";
 import { discoverWindowsCatalog, fetchSnapshotFromPc, restoreDiscoveredCatalog } from "./sync-client";
 import { fetchAvailableAppUpdate, type AvailableAppUpdate } from "./app-update";
 import { downloadAndInstallUpdate } from "./app-update-plugin";
 import "./App.css";
+import "./motion.css";
 
 import { CatalogView } from "./components/CatalogView";
 import { SyncView, type SyncState } from "./components/SyncView";
@@ -19,9 +21,17 @@ type ActiveTab = "catalog" | "sync" | "about";
 type NavDirection = "none" | "forward" | "backward";
 
 const LAST_DISCOVERY_URL_KEY = "sync_last_discovery_url";
+const LAST_SUCCESS_AT_KEY = "sync_last_success_at";
+const DISMISSED_UPDATE_VERSION_KEY = "app_update_dismissed_version_code";
 const LEGACY_SYNC_KEYS = ["sync_pc_address", "sync_pc_token"];
 const FOREGROUND_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const tabOrder: ActiveTab[] = ["catalog", "sync", "about"];
+
+function readDismissedUpdateVersionCode(): number | null {
+  const raw = window.localStorage.getItem(DISMISSED_UPDATE_VERSION_KEY);
+  const parsed = raw ? Number(raw) : Number.NaN;
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
 
 function App() {
   const [snapshot, setSnapshot] = useState<ExportCatalogSnapshot>(() => loadSnapshot());
@@ -33,6 +43,7 @@ function App() {
   const [selectedOwned, setSelectedOwned] = useState("全部");
   const [attributeFilter, setAttributeFilter] = useState("");
   const deferredAttributeFilter = useDeferredValue(attributeFilter);
+  const [sortOrder, setSortOrder] = useState<SortOrder>("relevance");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<ComponentRecord | null>(null);
   const [syncState, setSyncState] = useState<SyncState>("idle");
@@ -45,25 +56,24 @@ function App() {
   const [isInstallingUpdate, setIsInstallingUpdate] = useState(false);
   const [syncSource, setSyncSource] = useState("本地离线快照");
   const [lastCheckText, setLastCheckText] = useState("尚未检查");
+  const [lastSuccessAt, setLastSuccessAt] = useState<string | null>(() => window.localStorage.getItem(LAST_SUCCESS_AT_KEY));
   const [updateStatus, setUpdateStatus] = useState("尚未检查更新");
   const lastSuccessfulSyncRef = useRef(0);
-  const dismissedUpdateVersionCodeRef = useRef<number | null>(null);
   const refreshGenerationRef = useRef(0);
 
   const majorCategories = snapshot.meta.majorCategories;
 
   useEffect(() => {
-    setResults(
-      searchSnapshot(snapshot, {
-        text: deferredSearchText,
-        category: "全部",
-        majorCategoryId: selectedMajorCategoryId || undefined,
-        subCategoryId: selectedSubCategoryId || undefined,
-        package: selectedPackage === "全部封装" ? undefined : selectedPackage,
-        owned: selectedOwned === "全部" ? undefined : selectedOwned === "仅持有",
-        attributeText: deferredAttributeFilter || undefined,
-      }),
-    );
+    const searchResults = searchSnapshot(snapshot, {
+      text: deferredSearchText,
+      category: "全部",
+      majorCategoryId: selectedMajorCategoryId || undefined,
+      subCategoryId: selectedSubCategoryId || undefined,
+      package: selectedPackage === "全部封装" ? undefined : selectedPackage,
+      owned: selectedOwned === "全部" ? undefined : selectedOwned === "仅持有",
+      attributeText: deferredAttributeFilter || undefined,
+    });
+    setResults(sortSearchResults(searchResults, sortOrder));
   }, [
     deferredSearchText,
     selectedMajorCategoryId,
@@ -71,6 +81,7 @@ function App() {
     selectedPackage,
     selectedOwned,
     deferredAttributeFilter,
+    sortOrder,
     snapshot,
   ]);
 
@@ -152,7 +163,10 @@ function App() {
       }
 
       window.localStorage.setItem(LAST_DISCOVERY_URL_KEY, catalog.serviceUrl);
+      const syncedAt = new Date().toISOString();
+      window.localStorage.setItem(LAST_SUCCESS_AT_KEY, syncedAt);
       lastSuccessfulSyncRef.current = Date.now();
+      setLastSuccessAt(syncedAt);
       applySnapshot(nextSnapshot, "已同步 · 刚刚");
       setSyncState("synced");
       setLastCheckText("目录同步成功 · 已检查更新");
@@ -165,8 +179,11 @@ function App() {
         }
 
         if (update) {
-          setUpdateStatus(`可更新至 v${update.manifest.versionName}（code ${update.manifest.versionCode}）`);
-          if (dismissedUpdateVersionCodeRef.current !== update.manifest.versionCode) {
+          const dismissedVersionCode = readDismissedUpdateVersionCode();
+          if (dismissedVersionCode === update.manifest.versionCode) {
+            setUpdateStatus(`可更新至 v${update.manifest.versionName}（已选择稍后）`);
+          } else {
+            setUpdateStatus(`可更新至 v${update.manifest.versionName}（code ${update.manifest.versionCode}）`);
             setAvailableAppUpdate(update);
           }
         } else {
@@ -271,6 +288,8 @@ function App() {
             onSelectOwned={setSelectedOwned}
             attributeFilter={attributeFilter}
             onAttributeFilterChange={setAttributeFilter}
+            sortOrder={sortOrder}
+            onSelectSortOrder={setSortOrder}
             onOpenSync={() => switchTab("sync")}
           />
         )}
@@ -283,7 +302,9 @@ function App() {
             onRetry={() => void refreshCatalog()}
             syncSource={syncSource}
             lastCheckText={lastCheckText}
+            lastSuccessAt={lastSuccessAt}
             updateStatus={updateStatus}
+            onRetryUpdate={() => void refreshCatalog()}
           />
         )}
 
@@ -307,7 +328,10 @@ function App() {
         update={availableAppUpdate}
         isInstalling={isInstallingUpdate}
         onLater={() => {
-          dismissedUpdateVersionCodeRef.current = availableAppUpdate?.manifest.versionCode ?? null;
+          const dismissedVersionCode = availableAppUpdate?.manifest.versionCode ?? null;
+          if (dismissedVersionCode !== null) {
+            window.localStorage.setItem(DISMISSED_UPDATE_VERSION_KEY, String(dismissedVersionCode));
+          }
           setAvailableAppUpdate(null);
         }}
         onUpdate={() => void installAvailableUpdate()}

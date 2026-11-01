@@ -10,7 +10,9 @@ interface SyncViewProps {
   onRetry: () => void;
   syncSource?: string;
   lastCheckText?: string;
+  lastSuccessAt?: string | null;
   updateStatus?: string;
+  onRetryUpdate?: () => void;
 }
 
 function formatSnapshotTime(isoString?: string): string {
@@ -51,13 +53,16 @@ export const SyncView: React.FC<SyncViewProps> = ({
   onRetry,
   syncSource = "本地离线快照",
   lastCheckText = "尚未检查",
+  lastSuccessAt = null,
   updateStatus = "尚未检查更新",
+  onRetryUpdate,
 }) => {
   const taxonomyVersion = snapshot.meta.taxonomyVersion || "未知";
   const isBusy = syncState === "discovering" || syncState === "syncing";
   const isOfflineOrError = syncState === "offline" || syncState === "error";
   const stateLabel = getStateLabel(syncState);
   const isSynced = syncState === "synced";
+  const showUpdateRetry = Boolean(onRetryUpdate) && updateStatus.includes("失败");
 
   const showStatusNotice = (isBusy || isOfflineOrError) && statusText && !statusText.includes("已同步") && !statusText.includes("刚刚");
 
@@ -102,13 +107,23 @@ export const SyncView: React.FC<SyncViewProps> = ({
             <strong className="sync-diagnostic-value">{lastCheckText}</strong>
           </div>
           <div className="sync-diagnostic-row">
+            <span className="sync-diagnostic-label">设备同步</span>
+            <strong className="sync-diagnostic-value">{lastSuccessAt ? formatSnapshotTime(lastSuccessAt) : "尚未成功"}</strong>
+          </div>
+          <div className="sync-diagnostic-row">
             <span className="sync-diagnostic-label">应用更新</span>
             <strong className="sync-diagnostic-value">{updateStatus}</strong>
           </div>
         </div>
 
         {showStatusNotice && (
-          <div className="sync-status-notice">{statusText}</div>
+          <div className="sync-status-notice" role="status" aria-live="polite">{statusText}</div>
+        )}
+
+        {showUpdateRetry && (
+          <button type="button" className="md3-btn-outlined md3-btn-full-width" onClick={onRetryUpdate}>
+            重新检查更新
+          </button>
         )}
 
         <button

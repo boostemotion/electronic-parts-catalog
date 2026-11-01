@@ -48,18 +48,6 @@
     calc(104px + env(safe-area-inset-bottom, 0px));
 }
 
-.android-content-area > * {
-  animation: page-enter 320ms var(--md-motion-easing-standard);
-}
-
-.android-content-area[data-nav-direction="forward"] > * {
-  animation: page-slide-forward 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.android-content-area[data-nav-direction="backward"] > * {
-  animation: page-slide-backward 340ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
 .md3-top-app-bar {
   display: contents;
 }
@@ -1199,6 +1187,20 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 
+.md3-sheet-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.md3-icon-button.md3-sheet-close {
+  width: 36px;
+  height: 36px;
+  font-size: 22px;
+  line-height: 1;
+}
+
 .md3-sheet-section {
   margin-top: 18px;
   display: grid;
@@ -1332,46 +1334,13 @@
 .md3-animate-enter {
   opacity: 0;
   transform: translateY(10px);
-  animation: rise-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: rise-in 320ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 @keyframes rise-in {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-@keyframes page-enter {
-  from {
-    opacity: 0.96;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes page-slide-forward {
-  from {
-    opacity: 0.7;
-    transform: translateX(22px) translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) translateY(0);
-  }
-}
-
-@keyframes page-slide-backward {
-  from {
-    opacity: 0.72;
-    transform: translateX(-22px) translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) translateY(0);
   }
 }
 
