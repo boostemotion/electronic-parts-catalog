@@ -58,6 +58,36 @@ public sealed class CatalogRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task SaveComponentAsync_RecoversMissingSnapshotOnNextInitialization()
+    {
+        Directory.CreateDirectory(_workingDirectory);
+        var databasePath = Path.Combine(_workingDirectory, "catalog.db");
+        var snapshotPath = Path.Combine(_workingDirectory, "catalog.json");
+        Directory.CreateDirectory(snapshotPath);
+
+        await using (var repository = new CatalogRepository(new CatalogRepositoryOptions(databasePath, snapshotPath)))
+        {
+            await repository.InitializeAsync();
+            // A directory occupying the snapshot path makes the post-commit snapshot export fail
+            // after the SQLite row has already been committed, mirroring a crash/IO failure window.
+            await Assert.ThrowsAnyAsync<Exception>(() =>
+                repository.SaveComponentAsync(CreateComponent("recovered", "PART-RECOVERED")));
+        }
+
+        Directory.Delete(snapshotPath);
+        await using (var repository = new CatalogRepository(new CatalogRepositoryOptions(databasePath, snapshotPath)))
+        {
+            await repository.InitializeAsync();
+        }
+
+        Assert.True(File.Exists(snapshotPath));
+        var snapshotText = await File.ReadAllTextAsync(snapshotPath);
+        Assert.Contains("PART-RECOVERED", snapshotText);
+        using var snapshot = JsonDocument.Parse(snapshotText);
+        Assert.Equal(1, snapshot.RootElement.GetProperty("meta").GetProperty("componentCount").GetInt32());
+    }
+
+    [Fact]
     public async Task SaveComponentAsync_UpdatesExistingIdWhenPartNumberChanges()
     {
         await using var repository = await CreateRepositoryAsync();
