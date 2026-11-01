@@ -5,9 +5,9 @@
 ## 当前基线
 
 - 分支 `main`，无 remote，未 push；工作区干净。
-- 本轮整理出 **23 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
-- 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **60/60**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
-- 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,219,319 字节，`versionCode 4` / `versionName 1.1`。
+- 本轮整理出 **25 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
+- 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **62/62**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
+- 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,219,895 字节，`versionCode 4` / `versionName 1.1`。
 - 版本单一真源 `version.json`：product `1.1` / Android code `4` / taxonomy `1`。
 
 ## 提交（按主题）
@@ -18,7 +18,7 @@
 | 修复 | `071c579`（导入页双仓储）、`f92cff7`（包过滤大小写） |
 | 依赖与工具链 | `15df6c7`（SQLite 10.0.14，消除 NU1903）、`a80432c`（Android 脚本路径可配置） |
 | 功能补齐 | `7ffcdea`（日志轮转）、`2001b91`（单实例+删除确认）、`332e27a`（BOM 数量/位号落库）、`0718e41`（端口可配置）、`96995e9`（快照恢复测试） |
-| Android 体验优化 | `2536869`（排序、无障碍、同步反馈、动画与样式修复）、`722f414`（同步时间容错） |
+| Android 体验优化 | `2536869`（排序、无障碍、同步反馈、动画与样式修复）、`722f414`（同步时间容错）、`bfe423f`（深色主题与动效细调） |
 | 状态文档 | `a85550f`、`6693587`、`8a17bed`、`3028ae2` |
 
 ## 运行数据
@@ -44,6 +44,8 @@
 - **无障碍**：详情与筛选面板补齐 `role="dialog"` / `aria-modal` / `aria-label`，详情支持 Esc 关闭与可见关闭按钮；搜索框增加 `aria-label`。
 - **同步与更新**：新增“设备同步”时间（跨启动保留）、同步失败可重试更新检查按钮；更新提示“稍后”选择持久化到 localStorage，同一版本不再反复弹出。
 - **清理**：删除未接入的 `ComponentEditSheet.tsx`、`AppDialog.tsx` 死代码；`layout-scroll.test.ts` 改为断言当前实际使用的同步面板样式。
+- **深色主题**：`index.css` 增加完整的 `prefers-color-scheme: dark` 调色板（surface/on-surface/primary/error/inverse 等 20+ 变量），`surface-mix` 统一替代硬编码白色混合，snackbar 改用 inverse 色；`index.html` 提供双 `theme-color`；原生侧增加 `values-night/colors.xml`，`MainActivity` 根据 `UI_MODE_NIGHT` 自动切换系统栏图标明暗；更新/错误/状态徽标均有暗色适配。
+- **动效细调**：动效 token 收敛为 90–300ms 分级（short2 90ms、medium2 220ms、medium4 300ms）；页面转场位移 40→24px、卡片阶梯 30ms×10→18ms×8（封顶 144ms）、卡片位移 20→12px、弹层进出 400/250→300/180ms、按压缩放 0.97→0.985、导航图标 1.1→1.06；均保留 `prefers-reduced-motion` 降级。
 
 ## 环境限制（摘要，详见验证记录）
 
