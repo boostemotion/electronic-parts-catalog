@@ -25,8 +25,7 @@ public static class AppLogger
         try
         {
             CatalogStoragePaths.EnsureStorageLayout();
-            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.AppendAllText(path, $"{DateTime.Now:O} {DiagnosticRedactor.Redact(message)}{Environment.NewLine}");
+            CatalogLogFileWriter.AppendLine(path, $"{DateTime.Now:O} {DiagnosticRedactor.Redact(message)}");
         }
         catch
         {
