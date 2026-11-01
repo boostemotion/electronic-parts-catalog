@@ -55,7 +55,15 @@ describe("android shell resources", () => {
     expect(mainActivity).toContain("WindowInsetsCompat.Type.statusBars()");
     expect(mainActivity).toContain("controller.hide(");
     expect(mainActivity).toContain("BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE");
-    expect(mainActivity).toContain("setAppearanceLightNavigationBars(true)");
+    expect(mainActivity).toContain("setAppearanceLightNavigationBars(useLightSystemBarIcons)");
+  });
+
+  it("provides night-mode native colors matching the web dark palette", () => {
+    const nightColors = readProjectFile("android/app/src/main/res/values-night/colors.xml");
+
+    expect(nightColors).toContain('<color name="shellBackground">#0B1220</color>');
+    expect(nightColors).toContain('<color name="shellNavigationBar">#121A26</color>');
+    expect(nightColors).toContain('<color name="colorPrimary">#7CC0FF</color>');
   });
 
   it("declares the package installer permission required by in-app APK updates", () => {

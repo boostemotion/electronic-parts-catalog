@@ -1,5 +1,6 @@
 package com.partshelf.catalog;
 
+import android.content.res.Configuration;
 import android.os.Bundle;
 
 import androidx.core.view.WindowCompat;
@@ -23,6 +24,10 @@ public class MainActivity extends BridgeActivity {
         controller.setSystemBarsBehavior(
             WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         );
-        controller.setAppearanceLightNavigationBars(true);
+
+        int nightMode = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        boolean useLightSystemBarIcons = nightMode != Configuration.UI_MODE_NIGHT_YES;
+        controller.setAppearanceLightStatusBars(useLightSystemBarIcons);
+        controller.setAppearanceLightNavigationBars(useLightSystemBarIcons);
     }
 }

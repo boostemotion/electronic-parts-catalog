@@ -26,8 +26,20 @@ describe("Material 3 style contract", () => {
     const motionCss = readFileSync(path.join(srcDirectory, "motion.css"), "utf8");
 
     expect(appSource).toContain('import "./motion.css";');
-    expect(motionCss).toMatch(/\.md3-list > \.md3-catalog-card:nth-child\(n\+11\)\s*\{\s*animation-delay:\s*300ms/);
+    expect(motionCss).toMatch(/\.md3-list > \.md3-catalog-card:nth-child\(n\+9\)\s*\{\s*animation-delay:\s*144ms/);
     expect(motionCss).toContain("prefers-reduced-motion: reduce");
     expect(catalogSource).not.toMatch(/index \* 36/);
+  });
+
+  it("defines a dark theme for the Material 3 palette", () => {
+    const html = readFileSync(path.join(srcDirectory, "..", "index.html"), "utf8");
+
+    expect(indexCss).toContain("color-scheme: light;");
+    expect(indexCss).toMatch(/@media \(prefers-color-scheme: dark\)/);
+    expect(indexCss).toMatch(/--md-sys-color-surface:\s*#0b1220;/);
+    expect(indexCss).toMatch(/--md-sys-color-on-surface:\s*#e6edf7;/);
+    expect(indexCss).toMatch(/--md-sys-color-surface-mix:\s*#2a3648;/);
+    expect(html).toContain('media="(prefers-color-scheme: dark)"');
+    expect(html).toContain('content="#0b1220"');
   });
 });

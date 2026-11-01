@@ -26,7 +26,7 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--md-sys-color-surface-container-high) 92%, white) 0%,
+      color-mix(in srgb, var(--md-sys-color-surface-container-high) 92%, var(--md-sys-color-surface-mix)) 0%,
       color-mix(in srgb, var(--md-sys-color-primary-container) 38%, transparent) 44%,
       transparent 100%
     );
@@ -94,7 +94,7 @@
   height: 36px;
   border: 0;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--md-sys-color-primary-container) 72%, white);
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 72%, var(--md-sys-color-surface-mix));
   color: var(--md-sys-color-on-primary-container);
   font-size: 20px;
   display: inline-flex;
@@ -132,7 +132,7 @@
   min-width: 0;
   border-radius: 17px;
   padding: 10px 8px;
-  background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 92%, white);
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 92%, var(--md-sys-color-surface-mix));
   border: 0;
   box-shadow: none;
   display: grid;
@@ -176,7 +176,7 @@
   width: 100%;
   height: 48px;
   border-radius: 999px;
-  background-color: color-mix(in srgb, var(--md-sys-color-surface-container-high) 86%, white);
+  background-color: color-mix(in srgb, var(--md-sys-color-surface-container-high) 86%, var(--md-sys-color-surface-mix));
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
   padding: 0 20px 0 52px;
   font-size: 16px;
@@ -299,7 +299,7 @@
   padding: 10px 12px;
   border-radius: 16px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container) 92%, white) 0%, var(--md-sys-color-surface-container-low) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container) 92%, var(--md-sys-color-surface-mix)) 0%, var(--md-sys-color-surface-container-low) 100%);
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 68%, transparent);
   text-align: left;
   display: grid;
@@ -349,7 +349,7 @@
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 999px;
-  background-color: color-mix(in srgb, var(--md-sys-color-surface-variant) 52%, white);
+  background-color: color-mix(in srgb, var(--md-sys-color-surface-variant) 52%, var(--md-sys-color-surface-mix));
   color: var(--md-sys-color-on-surface-variant);
 }
 
@@ -359,7 +359,7 @@
 }
 
 .md3-badge-subtle {
-  background-color: color-mix(in srgb, var(--md-sys-color-tertiary-container) 58%, white);
+  background-color: color-mix(in srgb, var(--md-sys-color-tertiary-container) 58%, var(--md-sys-color-surface-mix));
   color: var(--md-sys-color-on-tertiary-container);
 }
 
@@ -380,6 +380,18 @@
 .md3-presence-pill.missing {
   background: #fce8e6;
   color: #c5221f;
+}
+
+@media (prefers-color-scheme: dark) {
+  .md3-presence-pill.owned {
+    background: #12351f;
+    color: #7ee2a8;
+  }
+
+  .md3-presence-pill.missing {
+    background: #4a1f1c;
+    color: #ffb4ab;
+  }
 }
 
 .md3-catalog-card__meta {
@@ -453,7 +465,7 @@
   min-width: 0;
   padding: 4px 8px;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--md-sys-color-primary-container) 72%, white);
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 72%, var(--md-sys-color-surface-mix));
   color: var(--md-sys-color-on-primary-container);
   display: flex;
   align-items: center;
@@ -476,7 +488,7 @@
   max-width: min(52vw, 240px);
   padding: 9px 12px 10px;
   border-radius: 18px;
-  background: color-mix(in srgb, var(--md-sys-color-primary-container) 72%, white);
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 72%, var(--md-sys-color-surface-mix));
   color: var(--md-sys-color-on-primary-container);
   display: grid;
   gap: 1px;
@@ -604,7 +616,7 @@
 }
 
 .metric-item {
-  background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 60%, white);
+  background: color-mix(in srgb, var(--md-sys-color-surface-container-high) 60%, var(--md-sys-color-surface-mix));
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 40%, transparent);
   border-radius: 6px;
   padding: 6px 8px;
@@ -720,7 +732,7 @@
 }
 
 .status-card {
-  background-color: color-mix(in srgb, var(--md-sys-color-surface-container) 92%, white);
+  background-color: color-mix(in srgb, var(--md-sys-color-surface-container) 92%, var(--md-sys-color-surface-mix));
   border-radius: 16px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 68%, transparent);
@@ -783,7 +795,7 @@
   margin: 14px 0 0;
   padding: 14px;
   border-radius: 18px;
-  background: color-mix(in srgb, var(--md-sys-color-surface) 92%, white);
+  background: color-mix(in srgb, var(--md-sys-color-surface) 92%, var(--md-sys-color-surface-mix));
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 58%, transparent);
   font-size: 12px;
   line-height: 1.55;
@@ -939,8 +951,8 @@
 }
 
 .md3-btn-filled-danger {
-  background-color: #c5221f;
-  color: #ffffff;
+  background-color: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
 }
 
 .md3-btn-outlined {
@@ -950,8 +962,8 @@
 }
 
 .md3-btn-danger {
-  color: #c5221f;
-  border-color: color-mix(in srgb, #c5221f 46%, transparent);
+  color: var(--md-sys-color-error);
+  border-color: color-mix(in srgb, var(--md-sys-color-error) 46%, transparent);
 }
 
 .md3-inline-banner {
@@ -964,15 +976,15 @@
 }
 
 .md3-inline-banner-danger {
-  background: color-mix(in srgb, #c5221f 12%, white);
-  color: #9b1c1a;
-  border: 1px solid color-mix(in srgb, #c5221f 24%, transparent);
+  background: color-mix(in srgb, var(--md-sys-color-error-container) 28%, var(--md-sys-color-surface-mix));
+  color: var(--md-sys-color-error);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-error) 32%, transparent);
 }
 
 .md3-inline-banner-warning {
-  background: color-mix(in srgb, #0f6cbd 10%, white);
-  color: #0a4f88;
-  border: 1px solid color-mix(in srgb, #0f6cbd 18%, transparent);
+  background: color-mix(in srgb, var(--md-sys-color-primary-container) 28%, var(--md-sys-color-surface-mix));
+  color: var(--md-sys-color-primary);
+  border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 28%, transparent);
 }
 
 .md3-btn-filled:active,
@@ -988,7 +1000,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   height: calc(84px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background-color: color-mix(in srgb, var(--md-sys-color-surface-container) 92%, white);
+  background-color: color-mix(in srgb, var(--md-sys-color-surface-container) 92%, var(--md-sys-color-surface-mix));
   border-top: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 58%, transparent);
   position: fixed;
   bottom: 0;
@@ -1071,7 +1083,7 @@
   z-index: 261;
   border-radius: 28px;
   padding: 20px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container-high) 94%, white) 0%, var(--md-sys-color-surface) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container-high) 94%, var(--md-sys-color-surface-mix)) 0%, var(--md-sys-color-surface) 100%);
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 56%, transparent);
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
   animation: dialog-rise 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1113,8 +1125,8 @@
   z-index: 320;
   border-radius: 18px;
   padding: 14px 16px;
-  background: color-mix(in srgb, var(--md-sys-color-on-surface) 96%, #0f172a);
-  color: #f8fbff;
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
   font-size: 13px;
   font-weight: 600;
   line-height: 1.5;
@@ -1129,7 +1141,7 @@
   bottom: 0;
   max-height: 88vh;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container-high) 90%, white) 0%, var(--md-sys-color-surface-container) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface-container-high) 90%, var(--md-sys-color-surface-mix)) 0%, var(--md-sys-color-surface-container) 100%);
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   z-index: 201;
@@ -1235,7 +1247,7 @@
 .md3-detail-kv-card {
   padding: 8px 10px;
   border-radius: 12px;
-  background-color: color-mix(in srgb, var(--md-sys-color-surface-container-low) 90%, white);
+  background-color: color-mix(in srgb, var(--md-sys-color-surface-container-low) 90%, var(--md-sys-color-surface-mix));
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 52%, transparent);
   display: grid;
   gap: 4px;
@@ -1252,7 +1264,7 @@
 }
 
 .md3-detail-notes {
-  background-color: color-mix(in srgb, var(--md-sys-color-surface-container-low) 92%, white);
+  background-color: color-mix(in srgb, var(--md-sys-color-surface-container-low) 92%, var(--md-sys-color-surface-mix));
   padding: 10px 12px;
   border-radius: 14px;
   font-size: 14px;
