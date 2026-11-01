@@ -1,0 +1,11 @@
+{
+  "packageName": "com.partshelf.catalog",
+  "versionCode": 4,
+  "versionName": "1.1",
+  "apkPath": "/mobile/app.apk",
+  "sizeBytes": 3226051,
+  "sha256": "e29849bc523d5829c4989ef2839077fca2cc6ccbfeb45abb47850df92de133d0",
+  "certificateSha256": "9f4e3c0548b597be699b9f4578bb1e2213739d2cce764b60b5810eeb7643e973",
+  "releaseNotes": "版本统一、筛选界面优化与自动更新",
+  "minimumSupportedVersionCode": 1
+}

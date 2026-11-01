@@ -11,44 +11,101 @@ Thumbs.db
 *.swp
 *.tmp
 
-# Local toolchains
+# Local toolchains and IDE caches
 .dotnet-sdk/
 .winappruntime/
+.gradle/
+**/.gradle/
 
-# .NET build outputs
-**/bin/
-**/obj/
+# .NET, WinUI, and test outputs
+**/[Bb]in/
+**/[Oo]bj/
 TestResults/
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
+*.binlog
+*.nupkg
+*.snupkg
+AppPackages/
+BundleArtifacts/
+*.msix
+*.msixupload
+*.appx
+*.appxbundle
+*.appxupload
+publish/
+artifacts/
 
-# Node / Vite / Capacitor
+# Node, Vite, Capacitor, and Android outputs
 **/node_modules/
 **/dist/
 **/dist-ssr/
 **/.vite/
-Android/android/.gradle/
 Android/android/build/
 Android/android/app/build/
 Android/android/capacitor-cordova-android-plugins/build/
+Android/android/.cxx/
 Android/android/local.properties
+Android/android/app/google-services.json
+*.apk
+*.aab
+*.apks
 
-# Logs
+# Logs and local diagnostics
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-
-# Android debug artifacts
 Android/android-device-screenshot-*.png
 Android/window_dump*.xml
 Android/dev-server.log
 
-# Local release bundle
-发布包/Android/*.apk
-发布包/Windows/
+# Credentials, signing material, and private configuration
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.jks
+*.keystore
+*.pem
+*.key
+*.mobileprovision
+**/*signing*.properties
+**/api.token
+secrets/
 
-# Local data
+# Local catalog state and backups — never commit live data
 *.db
 *.db-shm
 *.db-wal
 *.sqlite
+ComponentCatalogData/**/*.json
+!ComponentCatalogData/**/*.fixture.json
+!ComponentCatalogData/**/*.example.json
+!ComponentCatalogData/**/README.md
+ComponentCatalogData/**/catalog.json
+ComponentCatalogData/**/api.token
+ComponentCatalogData/**/lan-settings.json
+ComponentCatalogData/Backups/
+ComponentCatalogData/Logs/
+
+# Local release bundles
+发布包/Android/*.apk
+发布包/Windows/
+
+# Project-local agent toolchains, caches, secrets, and transient artifacts
+.hermes-work/
+
+# Hermes runtime residue; plans, Markdown documents, and scripts stay visible
+.hermes/publish-resource-*/
+.hermes/publish*.out
+.hermes/publish*.err
+.hermes/screenshots/
+.hermes/images/
+.hermes/*-shots*/
+.hermes/*.png
+.hermes/*.probe.targets
