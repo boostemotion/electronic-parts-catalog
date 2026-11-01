@@ -1,62 +1,170 @@
 # 电子元件入库与检索系统
 
-一个面向电子元件目录管理的双端项目：
+一个面向电子元件目录管理的双端系统：**Windows 主维护端**负责录入、编辑、导入与数据管理，**Android 查询端**负责离线搜索、筛选、详情查看与局域网同步。
 
-- `ComponentCatalogWinUI/`
-  Windows 主维护端：录入、编辑、删除、CSV/AI-BOM 导入、本地 API、备份恢复、局域网同步与 Android 安装包发布。
-- `Android/`
-  Android 查询端：离线搜索、筛选、详情查看、快照同步与应用内更新。
-- `ComponentCatalogCore/`
-  .NET 共享核心：SQLite 仓储、搜索、导入导出、API/发现服务、备份与校验。
-- `shared/`
-  前端共享类型与搜索规则实现（与 .NET 打分语义对齐）。
-- `scripts/`
-  版本同步、Android 发布、发布/一致性校验脚本。
-- `docs/`
-  文档索引：[docs/README.md](docs/README.md)；当前状态见 [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)，历史计划与测试证据归档在 `docs/archive/`。
+> 产品版本 **1.1** · Android `versionCode 4` · 分类体系 `v1`
 
-## 数据与版本
+## 功能特性
 
-- 运行数据默认位于 `ComponentCatalogData/`（`Data/` 数据库与快照、`Logs/`、`Backups/`），已被 `.gitignore` 排除，不要提交真实目录数据。
-- 可用环境变量 `COMPONENT_CATALOG_ROOT` 覆盖数据根目录。
-- 版本单一真源为 `version.json`（当前产品 `1.1`、Android `code 4`、taxonomy `1`）；
-  `node scripts/version.mjs --write` 会同步 C#/TS/props 生成文件与发布清单，`--check` 做一致性校验。
+### Windows 主维护端（WinUI 3）
 
-## 常用命令
+- 元件录入、编辑、删除，按大类/子类/封装/持有状态/属性筛选与搜索
+- CSV 批量导入，支持跳过、覆盖、合并别名策略
+- AI-BOM 导入：预览 → 挑选 → 提交，拒绝未分类、缺型号/封装或带警告的行
+- SQLite 作为唯一写入真源，`catalog.json` 作为只读快照导出
+- 备份与恢复：SHA-256 校验、完整性检查、恢复前安全备份、失败自动回滚
+- 本机管理 API（仅 `127.0.0.1`，Bearer 鉴权）
+- 局域网手机同步：UDP 自动发现 + 只读快照服务
+- 端口可配置、单实例保护、日志轮转、诊断导出
+- Android 安装包发布：签名、zipalign、SHA-256 与证书指纹校验
 
-### Android
+### Android 查询端（Capacitor + React）
+
+- 离线目录浏览，关键词搜索，大类/子类/封装/持有/属性筛选
+- 匹配度 / 名称 / 型号 / 分类排序
+- 元件详情、BOM 数量与位号展示
+- UDP 自动发现 Windows，拉取并缓存目录快照
+- 深色主题、Material 3 动效、无障碍支持
+- 应用内更新：下载到缓存、校验大小与 SHA-256 后交给系统安装器
+
+## 架构概览
+
+```text
+┌──────────────────────── Windows ────────────────────────┐
+│  WinUI 3 页面                                           │
+│      │                                                  │
+│  CatalogWorkspaceService                                │
+│      ├── CatalogRepository ── SQLite（catalog.db）      │
+│      ├── catalog.json（只读快照，原子替换）             │
+│      ├── CatalogApiServer  127.0.0.1:10849（Bearer）   │
+│      └── MobileDiscoveryServer  UDP:10850（只读发现）   │
+└──────────────────────────┬──────────────────────────────┘
+                           │ 同一可信私有 Wi‑Fi
+┌──────────────────────────▼──────────────────────────────┐
+│  Android（Capacitor + React）                            │
+│  localStorage 快照  ←  GET /mobile/snapshot             │
+│  AppUpdatePlugin     →  系统安装器（不静默安装）        │
+└─────────────────────────────────────────────────────────┘
+```
+
+## 技术栈
+
+| 模块 | 技术 |
+|---|---|
+| 共享核心 | .NET 10、Microsoft.Data.Sqlite、System.Text.Json |
+| Windows 端 | WinUI 3、Windows App SDK 2.x、xUnit |
+| Android 端 | Capacitor 8、React 19、TypeScript 6、Vite 8、Vitest |
+| 脚本 | Node.js ESM、PowerShell |
+| 构建与发布 | MSBuild、Gradle、zipalign、apksigner、aapt |
+
+## 目录结构
+
+```text
+ComponentCatalogCore/       .NET 共享核心：契约、仓储、搜索、导入、API、备份、分类
+ComponentCatalogCore.Tests/ xUnit 测试
+ComponentCatalogWinUI/      WinUI 3 桌面主维护端
+Android/                    Android 查询端（React Web + Capacitor 原生壳）
+shared/                     前端共享类型与搜索规则
+scripts/                    版本同步、Android 发布、一致性校验
+发布包/                     面向交付的说明、启动脚本与 Android 更新清单
+docs/                       文档索引、当前状态、验证记录与历史归档
+ComponentCatalog.slnx       .NET 解决方案入口
+version.json                版本单一真源
+```
+
+## 快速开始
+
+### 环境要求
+
+- Windows 10/11
+- [.NET 10 SDK](https://dotnet.microsoft.com/)
+- Node.js 24 / npm 11（Android Web 与发布脚本）
+- 原生 Android 构建：JDK 21+、Android SDK 36
+
+### .NET（核心与 WinUI）
+
+```powershell
+dotnet restore ComponentCatalog.slnx
+dotnet build ComponentCatalog.slnx -c Release
+dotnet test ComponentCatalogCore.Tests/ComponentCatalogCore.Tests.csproj
+```
+
+仓库内自带 `.dotnet-sdk/` 时可直接使用：
+
+```powershell
+.\.dotnet-sdk\dotnet.exe build ComponentCatalog.slnx
+.\.dotnet-sdk\dotnet.exe test ComponentCatalogCore.Tests
+```
+
+### Android Web 端
 
 ```powershell
 cd Android
+npm install
 npm test
 npm run build
 npm run lint
-npm run version:check
+```
+
+### Android 原生包
+
+```powershell
+cd Android
 npm run android:sync
 cd android
-.\gradlew.bat assembleDebug --no-daemon
+.\gradlew.bat assembleRelease --no-daemon
 ```
 
-### .NET Core / WinUI
+正式发布使用仓库根目录的 `发布包/更新安卓安装包到发布包.bat`；需要外部签名材料，详见 [发布包/Android同步说明.md](发布包/Android同步说明.md)。
 
-仓库根目录的 `.dotnet-sdk/` 提供固定 SDK 时可优先使用 `.\.dotnet-sdk\dotnet.exe`：
+## 数据与版本
+
+- 运行数据默认位于 `ComponentCatalogData/`：`Data/`（SQLite 与快照）、`Logs/`、`Backups/`；该目录已被 `.gitignore` 排除，**不要提交真实目录数据**。
+- 可用环境变量 `COMPONENT_CATALOG_ROOT` 覆盖数据根目录。
+- 版本单一真源为 `version.json`（当前 `1.1` / Android code `4` / taxonomy `1`）：
 
 ```powershell
-dotnet test ComponentCatalogCore.Tests
-dotnet build ComponentCatalog.slnx
+node scripts/version.mjs --check   # 校验生成文件与版本一致
+node scripts/version.mjs --write   # 同步 C#/TS/props 与发布清单
 ```
 
-### 版本与脚本校验
+## 本机 API（可选）
 
-```powershell
-node scripts/version.mjs --check
-node --test scripts/
-```
+默认仅监听 `127.0.0.1:10849`，管理接口需要 Bearer Token；Android 同步使用局域网只读端点。
 
-## Git 约定
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| `GET` | `/components`、`/components/search` | 查询/搜索元件 |
+| `GET/POST/PUT/DELETE` | `/components/{id}`、`/components` | 元件管理（Bearer） |
+| `GET` | `/categories`、`/taxonomy/categories` | 分类数据 |
+| `POST` | `/imports/bom/preview`、`/imports/bom/commit` | AI-BOM 预览/提交（Bearer） |
+| `GET` | `/mobile/snapshot` | Android 只读快照（仅局域网） |
+| `GET` | `/mobile/app-update`、`/mobile/app.apk` | Android 更新清单/安装包（仅局域网） |
 
-- 已忽略构建产物、`node_modules`、`bin/obj`、Android 调试截图与本地日志。
-- 建议发布前至少通过：
-  - `Android: npm test && npm run build && npm run lint`
-  - `.NET: dotnet test ComponentCatalogCore.Tests`
-  - `node scripts/version.mjs --check`
+## 测试与校验
+
+| 范围 | 命令 | 当前状态 |
+|---|---|---|
+| .NET 核心（不含 API 宿主） | `dotnet test ComponentCatalogCore.Tests --filter "FullyQualifiedName!~CatalogApiServerTests"` | 104/104 |
+| Android Web | `npm --prefix Android test` | 62/62 |
+| Android 构建 | `npm --prefix Android run build` | PASS |
+| 版本一致性 | `node scripts/version.mjs --check` | PASS |
+| 脚本测试 | `node --test scripts/` | 17/17 |
+
+> 13 个 `CatalogApiServerTests` 在当前开发机受 .NET 10 `HttpListener` 与 Windows 11 兼容问题阻塞；详见 [docs/verification/2026-11-01-verification.md](docs/verification/2026-11-01-verification.md)。
+
+## 文档
+
+- [docs/README.md](docs/README.md)：文档索引
+- [docs/PROJECT_STATUS.md](docs/PROJECT_STATUS.md)：当前状态、验证结果、已知限制与 backlog
+- [docs/verification/2026-11-01-verification.md](docs/verification/2026-11-01-verification.md)：完整验证记录
+- [发布包/AI-BOM导入说明.md](发布包/AI-BOM导入说明.md)：AI-BOM 导入流程
+- [发布包/Android同步说明.md](发布包/Android同步说明.md)：局域网同步与 Android 更新
+- [发布包/分类体系说明.md](发布包/分类体系说明.md)：两级固定分类体系
+
+## 安全与隐私
+
+- `ComponentCatalogData/`、`api.token`、`lan-settings.json`、日志、备份与 APK 均不纳入版本控制。
+- 本机 API 默认只绑定回环地址；局域网同步仅面向可信私有网络，当前使用 HTTP，请勿在公共网络使用。
+- 发布签名材料（keystore / properties）必须放在仓库外，禁止提交。
+- Android 更新会校验 APK 大小与 SHA-256，并通过系统安装器确认，不静默安装。
