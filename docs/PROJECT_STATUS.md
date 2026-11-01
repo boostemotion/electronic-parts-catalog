@@ -1,11 +1,11 @@
 # 项目状态（2026-11-01）
 
-当前状态摘要。完整验证记录见 [verification/2026-11-01-verification.md](verification/2026-11-01-verification.md)，文档索引见 [README.md](README.md)。最后整理：2026-11-01。
+当前状态摘要。完整验证记录见 [verification/2026-11-01-verification.md](verification/2026-11-01-verification.md)，文档索引见 [README.md](README.md)。最后整理：2026-11-01（隐私历史重写后）。
 
 ## 当前基线
 
 - 分支 `main`，远程 `origin` = `https://github.com/boostemotion/electronic-parts-catalog.git`（公开），已推送；工作区干净。
-- 本轮整理出 **26 个本地提交**（下表），整理前的工作区 checkpoint `c4975b9` 仍可通过 reflog 找回。
+- `main` 共 **31 个提交**。2026-11-01 已按隐私要求重写历史：作者/提交者统一为 `boostemotion <noreply>`，并清理历史中的本机路径、旧内网地址与真实数据引用；旧提交哈希已失效，以 `git log` 为准。
 - 测试：.NET 非 API **104/104**（Debug 与 Release）、Android **62/62**、scripts **17/17**；13 个 `CatalogApiServerTests` 受本机 .NET 10 HttpListener 兼容问题阻塞（见验证记录）。
 - 原生 Android release 构建通过（含本轮 Web 资源同步）：`app-release-unsigned.apk` 3,219,895 字节，`versionCode 4` / `versionName 1.1`。
 - 版本单一真源 `version.json`：product `1.1` / Android code `4` / taxonomy `1`。
@@ -14,12 +14,12 @@
 
 | 主题 | 提交 |
 |---|---|
-| 基线整理 | `7539a4a`、`a905022`、`c11dc16`、`330c627`、`402b972`、`b0981de` |
-| 修复 | `071c579`（导入页双仓储）、`f92cff7`（包过滤大小写） |
-| 依赖与工具链 | `15df6c7`（SQLite 10.0.14，消除 NU1903）、`a80432c`（Android 脚本路径可配置） |
-| 功能补齐 | `7ffcdea`（日志轮转）、`2001b91`（单实例+删除确认）、`332e27a`（BOM 数量/位号落库）、`0718e41`（端口可配置）、`96995e9`（快照恢复测试） |
-| Android 体验优化 | `2536869`（排序、无障碍、同步反馈、动画与样式修复）、`722f414`（同步时间容错）、`bfe423f`（深色主题与动效细调） |
-| 状态文档 | `a85550f`、`6693587`、`8a17bed`、`3028ae2` |
+| 基线整理 | `dae6e59`、`9a260a1`、`b01e6a4`、`12dd2c2`、`8ee1f7d`、`57d2508` |
+| 修复 | `3be08a4`（导入页双仓储）、`0c65dac`（包过滤大小写） |
+| 依赖与工具链 | `4b23b49`（SQLite 10.0.14，消除 NU1903）、`76b93a3`（Android 脚本路径可配置） |
+| 功能补齐 | `275ad07`（日志轮转）、`a3014ad`（单实例+删除确认）、`ef1ea4f`（BOM 数量/位号落库）、`cc4b7a9`（端口可配置）、`aea1da9`（快照恢复测试） |
+| Android 体验优化 | `1a5b929`（排序、无障碍、同步反馈、动画与样式修复）、`ec30b14`（同步时间容错）、`ebfa7a8`（深色主题与动效细调） |
+| 状态文档 | `375e7e7`、`37650a8`、`de364ef`、`a4cb1e3`、`dea3eb0`、`a092645`、`7bfa34e`、`503a123`、`c4b9cad` |
 
 ## 运行数据
 
