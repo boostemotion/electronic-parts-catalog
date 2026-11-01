@@ -29,6 +29,8 @@ export interface ComponentRecord {
   majorCategoryId?: string;
   subCategoryId?: string;
   package: string;
+  quantity?: number;
+  designators?: string[];
   aliases: string[];
   keywords: string[];
   attributes: ComponentAttributeMap;

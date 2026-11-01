@@ -81,7 +81,9 @@ function isComponentRecord(value: unknown): value is ComponentRecord {
     typeof value.notes === "string" &&
     (value.sourceType === "manual" || value.sourceType === "csv-import") &&
     (value.majorCategoryId === undefined || typeof value.majorCategoryId === "string") &&
-    (value.subCategoryId === undefined || typeof value.subCategoryId === "string")
+    (value.subCategoryId === undefined || typeof value.subCategoryId === "string") &&
+    (value.quantity === undefined || (typeof value.quantity === "number" && Number.isInteger(value.quantity) && value.quantity >= 0)) &&
+    (value.designators === undefined || isStringArray(value.designators))
   );
 }
 

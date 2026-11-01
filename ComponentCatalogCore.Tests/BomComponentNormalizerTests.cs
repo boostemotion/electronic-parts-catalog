@@ -23,6 +23,21 @@ public sealed class BomComponentNormalizerTests
     }
 
     [Fact]
+    public void Normalize_PersistsBomQuantityAndDesignators()
+    {
+        var result = BomComponentNormalizer.Normalize(new BomImportRow
+        {
+            Quantity = 4,
+            Value = "100nF",
+            Footprint = "C0603",
+            Designators = ["C1", " C2 ", "c2"],
+        });
+
+        Assert.Equal(4, result.Record.Quantity);
+        Assert.Equal(["C1", "C2"], result.Record.Designators);
+    }
+
+    [Fact]
     public void Normalize_SeparatesResistorValueAndPackage()
     {
         var result = BomComponentNormalizer.Normalize(new BomImportRow

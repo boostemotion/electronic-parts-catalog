@@ -54,6 +54,8 @@ AI 只能把可可靠确认的行放入 `rows`。无法确认型号/值、封装
 
 **强制规则：型号/值和封装必须分开。** 绝不生成 `100nf_C0603`、`10K_R0805` 之类的 `name` 或 `partNumber`。
 
+BOM 行中的 `quantity` 与 `designators` 会随元件记录一起写入 SQLite 与 `catalog.json` 快照，在 Windows 与 Android 端用于展示 BOM 数量与位号；它们不会与型号/封装拼接。重复行合并（merge）时位号取并集、数量取本次有效值。
+
 ## 固定分类与人工复核
 
 `majorCategoryId` 和 `subCategoryId` 是固定、版本化的目录契约；`category` 仅是由子类 ID 推导出的兼容显示标签，不能创建任意自由文本分类。位号、已知 MPN 和受支持的旧分类可确定地映射为稳定 ID（例如 `C1` -> `passives/mlcc`，`AMS1117` -> `protection-power/ldo`）。

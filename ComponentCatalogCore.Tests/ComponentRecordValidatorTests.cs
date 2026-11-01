@@ -59,6 +59,33 @@ public sealed class ComponentRecordValidatorTests
         Assert.Equal("Category must resolve to a known taxonomy entry.", error);
     }
 
+    [Fact]
+    public void ValidateAndNormalize_RejectsNegativeQuantity()
+    {
+        var component = CreateComponent();
+        component.MajorCategoryId = "passives";
+        component.SubCategoryId = "mlcc";
+        component.Quantity = -1;
+
+        var error = ComponentRecordValidator.ValidateAndNormalize(component);
+
+        Assert.Equal("Quantity cannot be negative.", error);
+    }
+
+    [Fact]
+    public void ValidateAndNormalize_NormalizesDesignators()
+    {
+        var component = CreateComponent();
+        component.MajorCategoryId = "passives";
+        component.SubCategoryId = "mlcc";
+        component.Designators = [" C1 ", "c1", "", "C2"];
+
+        var error = ComponentRecordValidator.ValidateAndNormalize(component);
+
+        Assert.Null(error);
+        Assert.Equal(["C1", "C2"], component.Designators);
+    }
+
     private static ComponentRecord CreateComponent() => new()
     {
         Id = "record",

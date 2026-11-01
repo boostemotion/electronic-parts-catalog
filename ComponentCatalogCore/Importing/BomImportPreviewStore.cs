@@ -73,7 +73,8 @@ public sealed class BomImportPreviewStore
         MajorCategoryId = record.MajorCategoryId, SubCategoryId = record.SubCategoryId, Package = record.Package,
         Aliases = record.Aliases.ToList(), Keywords = record.Keywords.ToList(),
         Attributes = new Dictionary<string, string>(record.Attributes, StringComparer.OrdinalIgnoreCase), Owned = record.Owned,
-        Location = record.Location, Substitutes = record.Substitutes.ToList(), Notes = record.Notes, SourceType = record.SourceType,
+        Location = record.Location, Substitutes = record.Substitutes.ToList(), Notes = record.Notes,
+        Quantity = record.Quantity, Designators = record.Designators.ToList(), SourceType = record.SourceType,
     };
 
     private sealed record StoredPreview(BomImportPreview Preview, DateTimeOffset ExpiresAt);

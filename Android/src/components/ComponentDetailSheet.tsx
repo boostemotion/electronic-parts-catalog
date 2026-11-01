@@ -43,6 +43,9 @@ export const ComponentDetailSheet: React.FC<ComponentDetailSheetProps> = ({ comp
             <span className="md3-badge md3-badge-accent">子类: {subCategory?.label || component.category || "未分类"}</span>
             <span className="md3-badge">封装: {component.package}</span>
             <span className="md3-badge">位置: {component.location || "未存位置"}</span>
+            {typeof component.quantity === "number" && component.quantity > 0 && (
+              <span className="md3-badge">BOM 数量: {component.quantity}</span>
+            )}
             <span className="md3-badge md3-badge-subtle">来源: {sourceTypeLabel}</span>
           </div>
 
@@ -57,10 +60,11 @@ export const ComponentDetailSheet: React.FC<ComponentDetailSheetProps> = ({ comp
             </section>
           )}
 
-          {(component.aliases.length > 0 || component.substitutes.length > 0 || component.keywords.length > 0) && (
+          {(component.aliases.length > 0 || component.substitutes.length > 0 || component.keywords.length > 0 || (component.designators?.length ?? 0) > 0) && (
             <section className="md3-sheet-section">
               <h4>扩展信息</h4>
               <div className="md3-sheet-info-list">
+                {(component.designators?.length ?? 0) > 0 && <p><strong>位号：</strong>{component.designators!.join(" / ")}</p>}
                 {component.aliases.length > 0 && <p><strong>别名：</strong>{component.aliases.join(" / ")}</p>}
                 {component.keywords.length > 0 && <p><strong>关键词：</strong>{component.keywords.join(" / ")}</p>}
                 {component.substitutes.length > 0 && <p><strong>替代料：</strong>{component.substitutes.join(" / ")}</p>}

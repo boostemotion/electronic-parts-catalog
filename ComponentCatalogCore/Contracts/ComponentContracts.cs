@@ -20,6 +20,9 @@ public sealed class ComponentRecord
     public string MajorCategoryId { get; set; } = string.Empty;
     public string SubCategoryId { get; set; } = string.Empty;
     public string Package { get; set; } = string.Empty;
+    // BOM import context: requested quantity and board designators (for example C1, C2).
+    public int Quantity { get; set; }
+    public IReadOnlyList<string> Designators { get; set; } = [];
     public IReadOnlyList<string> Aliases { get; set; } = [];
     public IReadOnlyList<string> Keywords { get; set; } = [];
     public IReadOnlyDictionary<string, string> Attributes { get; set; } = new Dictionary<string, string>();

@@ -1,6 +1,7 @@
 using ComponentCatalogCore.Contracts;
 using ComponentCatalogCore.Persistence;
 using ComponentCatalogCore.Taxonomy;
+using ComponentCatalogCore.Validation;
 
 namespace ComponentCatalogCore.Importing;
 
@@ -45,7 +46,7 @@ public sealed class BomImportPreviewService
             string.IsNullOrWhiteSpace(normalized.Record.Package);
 
         var commitRecord = match.Action == BomMatchAction.Merge && match.MatchedComponent is not null
-            ? match.MatchedComponent
+            ? MergeBomMetadata(match.MatchedComponent, normalized.Record)
             : normalized.Record;
         return new BomImportPreviewItem
         {
@@ -58,6 +59,31 @@ public sealed class BomImportPreviewService
             CommitRecord = commitRecord,
         };
     }
+
+    private static ComponentRecord MergeBomMetadata(ComponentRecord existing, ComponentRecord incoming) => new()
+    {
+        Id = existing.Id,
+        Name = existing.Name,
+        PartNumber = existing.PartNumber,
+        Category = existing.Category,
+        MajorCategoryId = existing.MajorCategoryId,
+        SubCategoryId = existing.SubCategoryId,
+        Package = existing.Package,
+        Aliases = existing.Aliases,
+        Keywords = existing.Keywords,
+        Attributes = existing.Attributes,
+        Owned = existing.Owned,
+        Location = existing.Location,
+        Substitutes = existing.Substitutes,
+        Notes = existing.Notes,
+        SourceType = existing.SourceType,
+        Quantity = incoming.Quantity > 0 ? incoming.Quantity : existing.Quantity,
+        Designators = existing.Designators
+            .Concat(incoming.Designators)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(ComponentRecordValidator.MaximumCollectionEntries)
+            .ToList(),
+    };
 
     private static void AddEligibilityWarnings(ComponentRecord record, ICollection<string> warnings)
     {

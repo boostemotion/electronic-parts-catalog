@@ -133,6 +133,22 @@ public sealed class BomImportPreviewServiceTests : IAsyncDisposable
         Assert.True(BomImportPreviewService.CanCommit(item));
     }
 
+    [Fact]
+    public async Task CreatePreviewAsync_CarriesBomQuantityAndDesignatorsIntoCommitRecord()
+    {
+        var item = await CreatePreviewItemAsync(new BomImportRow
+        {
+            Quantity = 4,
+            Value = "100nF",
+            Footprint = "C0603",
+            Designators = ["C1", " C2 ", "c2"],
+        });
+
+        Assert.Equal(BomMatchAction.Create, item.Action);
+        Assert.Equal(4, item.CommitRecord.Quantity);
+        Assert.Equal(["C1", "C2"], item.CommitRecord.Designators);
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (Directory.Exists(_directory))

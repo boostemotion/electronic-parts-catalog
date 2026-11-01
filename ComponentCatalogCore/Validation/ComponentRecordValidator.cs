@@ -8,6 +8,7 @@ public static class ComponentRecordValidator
     public const int MaximumBodyFieldLength = 512;
     public const int MaximumNotesLength = 4_096;
     public const int MaximumCollectionEntries = 100;
+    public const int MaximumQuantity = 1_000_000;
 
     public static string? ValidateAndNormalize(ComponentRecord component)
     {
@@ -38,6 +39,17 @@ public static class ComponentRecordValidator
         component.Category = ComponentCategoryTaxonomy.GetAssignment(component.MajorCategoryId, component.SubCategoryId).SubCategory;
         component.Location = (component.Location ?? string.Empty).Trim();
         component.Notes = (component.Notes ?? string.Empty).Trim();
+        component.Designators = NormalizeCollection(component.Designators);
+
+        if (component.Quantity < 0)
+        {
+            return "Quantity cannot be negative.";
+        }
+
+        if (component.Quantity > MaximumQuantity)
+        {
+            return "Quantity exceeds the supported maximum.";
+        }
 
         if (string.IsNullOrWhiteSpace(component.Name))
         {
@@ -63,6 +75,7 @@ public static class ComponentRecordValidator
         if (!HasValidCollection(component.Aliases) ||
             !HasValidCollection(component.Keywords) ||
             !HasValidCollection(component.Substitutes) ||
+            !HasValidCollection(component.Designators) ||
             !HasValidAttributes(component.Attributes))
         {
             return "Collections contain invalid or too many entries.";
@@ -70,6 +83,14 @@ public static class ComponentRecordValidator
 
         return null;
     }
+
+    private static IReadOnlyList<string> NormalizeCollection(IReadOnlyList<string>? values) =>
+        (values ?? [])
+            .Select(value => (value ?? string.Empty).Trim())
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaximumCollectionEntries)
+            .ToList();
 
     private static bool HasValidLength(string value, int maximumLength) => value.Length <= maximumLength;
 

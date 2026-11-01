@@ -9,6 +9,7 @@ public static partial class BomComponentNormalizer
     public const int MaximumKeywords = 5;
     public const int MaximumAttributes = 5;
     public const int MaximumNotesLength = 240;
+    public const int MaximumDesignators = 100;
 
     private static readonly HashSet<string> AllowedCategories = new(StringComparer.Ordinal)
     {
@@ -47,6 +48,8 @@ public static partial class BomComponentNormalizer
                 Location = string.Empty,
                 Substitutes = substitutes,
                 Notes = notes,
+                Quantity = Math.Max(row.Quantity, 0),
+                Designators = NormalizeDesignators(row.Designators),
                 SourceType = ComponentSourceType.CsvImport,
             },
             Warnings = warnings,
@@ -149,6 +152,14 @@ public static partial class BomComponentNormalizer
             .Take(MaximumKeywords)
             .ToList();
     }
+
+    private static IReadOnlyList<string> NormalizeDesignators(IEnumerable<string> designators) =>
+        designators
+            .Select(designator => designator.Trim())
+            .Where(designator => !string.IsNullOrWhiteSpace(designator))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaximumDesignators)
+            .ToList();
 
     private static string NormalizeNotes(string notes, ICollection<string> warnings)
     {

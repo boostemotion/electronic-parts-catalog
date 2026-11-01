@@ -356,7 +356,7 @@ public sealed class CatalogRepository : IAsyncDisposable
 
         await CreateComponentsTableAsync();
         await MigrateLegacyPartNumberUniquenessAsync();
-        await EnsureCategoryColumnsAsync();
+        await EnsureOptionalColumnsAsync();
         await EnsureComponentIdentityIndexAsync();
         _initialized = true;
 
@@ -389,13 +389,15 @@ public sealed class CatalogRepository : IAsyncDisposable
                 location TEXT NOT NULL,
                 substitutes_json TEXT NOT NULL,
                 notes TEXT NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 0,
+                designators_json TEXT NOT NULL DEFAULT '[]',
                 source_type TEXT NOT NULL
             );
             """;
         await command.ExecuteNonQueryAsync();
     }
 
-    private async Task EnsureCategoryColumnsAsync()
+    private async Task EnsureOptionalColumnsAsync()
     {
         var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         await using (var command = _connection.CreateCommand())
@@ -419,6 +421,20 @@ public sealed class CatalogRepository : IAsyncDisposable
         {
             await using var command = _connection.CreateCommand();
             command.CommandText = "ALTER TABLE components ADD COLUMN sub_category_id TEXT NOT NULL DEFAULT 'uncategorized'";
+            await command.ExecuteNonQueryAsync();
+        }
+
+        if (!existingColumns.Contains("quantity"))
+        {
+            await using var command = _connection.CreateCommand();
+            command.CommandText = "ALTER TABLE components ADD COLUMN quantity INTEGER NOT NULL DEFAULT 0";
+            await command.ExecuteNonQueryAsync();
+        }
+
+        if (!existingColumns.Contains("designators_json"))
+        {
+            await using var command = _connection.CreateCommand();
+            command.CommandText = "ALTER TABLE components ADD COLUMN designators_json TEXT NOT NULL DEFAULT '[]'";
             await command.ExecuteNonQueryAsync();
         }
     }
@@ -584,16 +600,18 @@ public sealed class CatalogRepository : IAsyncDisposable
                   location = $location,
                   substitutes_json = $substitutes,
                   notes = $notes,
+                  quantity = $quantity,
+                  designators_json = $designators,
                   source_type = $sourceType
               WHERE id = $id;
               """
             : """
               INSERT INTO components (
                   id, name, part_number, category, major_category_id, sub_category_id, package_name, aliases_json, keywords_json,
-                  attributes_json, owned, location, substitutes_json, notes, source_type
+                  attributes_json, owned, location, substitutes_json, notes, quantity, designators_json, source_type
               ) VALUES (
                   $id, $name, $partNumber, $category, $majorCategoryId, $subCategoryId, $packageName, $aliases, $keywords,
-                  $attributes, $owned, $location, $substitutes, $notes, $sourceType
+                  $attributes, $owned, $location, $substitutes, $notes, $quantity, $designators, $sourceType
               );
               """;
         AddComponentParameters(command, component);
@@ -653,6 +671,8 @@ public sealed class CatalogRepository : IAsyncDisposable
         command.Parameters.AddWithValue("$location", component.Location);
         command.Parameters.AddWithValue("$substitutes", JsonSerializer.Serialize(component.Substitutes));
         command.Parameters.AddWithValue("$notes", component.Notes);
+        command.Parameters.AddWithValue("$quantity", component.Quantity);
+        command.Parameters.AddWithValue("$designators", JsonSerializer.Serialize(component.Designators));
         command.Parameters.AddWithValue("$sourceType", ComponentSourceTypeContract.ToContractValue(component.SourceType));
     }
 
@@ -721,6 +741,8 @@ public sealed class CatalogRepository : IAsyncDisposable
             Location = reader.GetString(reader.GetOrdinal("location")),
             Substitutes = DeserializeList(reader.GetString(reader.GetOrdinal("substitutes_json"))),
             Notes = reader.GetString(reader.GetOrdinal("notes")),
+            Quantity = reader.GetInt32(reader.GetOrdinal("quantity")),
+            Designators = DeserializeList(reader.GetString(reader.GetOrdinal("designators_json"))),
             SourceType = ComponentSourceTypeContract.Parse(reader.GetString(reader.GetOrdinal("source_type"))),
         };
     }

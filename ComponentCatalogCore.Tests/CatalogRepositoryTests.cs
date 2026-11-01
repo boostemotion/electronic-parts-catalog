@@ -37,6 +37,27 @@ public sealed class CatalogRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task Repository_PersistsBomQuantityAndDesignators()
+    {
+        await using var repository = await CreateRepositoryAsync();
+        var component = CreateComponent("cap-0603", "100nF");
+        component.Quantity = 3;
+        component.Designators = ["C1", " C2 ", "c2"];
+
+        await repository.SaveComponentAsync(component);
+
+        var saved = Assert.Single(await repository.ListComponentsAsync());
+        Assert.Equal(3, saved.Quantity);
+        Assert.Equal(["C1", "C2"], saved.Designators);
+        using var snapshot = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(_workingDirectory, "catalog.json")));
+        var serialized = snapshot.RootElement.GetProperty("components")[0];
+        Assert.Equal(3, serialized.GetProperty("quantity").GetInt32());
+        Assert.Equal(
+            ["C1", "C2"],
+            serialized.GetProperty("designators").EnumerateArray().Select(item => item.GetString() ?? string.Empty).ToArray());
+    }
+
+    [Fact]
     public async Task SaveComponentAsync_UpdatesExistingIdWhenPartNumberChanges()
     {
         await using var repository = await CreateRepositoryAsync();
