@@ -1,4 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Version.props" />
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
@@ -6,7 +8,7 @@
     <RootNamespace>ComponentCatalogWinUI</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x86;x64;ARM64</Platforms>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
     <PublishProfile Condition="Exists('Properties\PublishProfiles\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <WindowsPackageType>None</WindowsPackageType>
@@ -45,6 +47,34 @@
   <ItemGroup>
     <ProjectReference Include="..\ComponentCatalogCore\ComponentCatalogCore.csproj" />
   </ItemGroup>
+
+  <Target Name="AddReleaseLauncherToPublish" BeforeTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(MSBuildProjectDirectory)\..\发布包\启动Windows程序.bat">
+        <RelativePath>启动Windows程序.bat</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish Include="$(MSBuildProjectDirectory)\..\发布包\Start-WindowsProgram.ps1">
+        <RelativePath>Start-WindowsProgram.ps1</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopyWinUIResourcesToPublish" AfterTargets="Publish">
+    <ItemGroup>
+      <_WinUIXbfFiles Include="$(TargetDir)**\*.xbf" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(_WinUIXbfFiles)"
+      DestinationFiles="@(_WinUIXbfFiles->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="$(ProjectPriFullPath)"
+      DestinationFiles="$(PublishDir)$(ProjectPriFileName)"
+      SkipUnchangedFiles="true"
+      Condition="Exists('$(ProjectPriFullPath)')" />
+  </Target>
 
   <!-- Publish Properties -->
   <PropertyGroup>

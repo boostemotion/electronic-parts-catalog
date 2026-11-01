@@ -10,22 +10,41 @@
 
     <ScrollViewer>
         <StackPanel Padding="24,18,24,24" Spacing="16">
+            <StackPanel.ChildrenTransitions>
+                <TransitionCollection>
+                    <EntranceThemeTransition IsStaggeringEnabled="False" />
+                </TransitionCollection>
+            </StackPanel.ChildrenTransitions>
             <StackPanel Spacing="6">
                 <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="关于" />
-                <TextBlock Style="{StaticResource MutedBodyTextStyle}" Text="这是电子元件入库台的 WinUI 3 原生壳，目标是提供更接近 Windows 设置的 Fluent 桌面体验。" />
+                <TextBlock Style="{StaticResource MutedBodyTextStyle}" Text="电子元件入库台是基于 WinUI 3 的 Windows 桌面元件目录与库存管理工具。" />
             </StackPanel>
 
             <Border Style="{StaticResource SectionCardStyle}">
                 <StackPanel Spacing="8">
-                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="当前阶段" />
-                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="Windows 端负责维护目录、搜索和详情编辑；Android 首版只读查询。当前已完成 WinUI 3 桌面骨架与本地交互原型。" />
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="版本" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="应用版本：" />
+                        <TextBlock FontWeight="SemiBold" Text="{x:Bind AppVersion}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="分类协议：" />
+                        <TextBlock FontWeight="SemiBold" Text="v1" />
+                    </StackPanel>
                 </StackPanel>
             </Border>
 
             <Border Style="{StaticResource SectionCardStyle}">
                 <StackPanel Spacing="8">
-                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="下一步" />
-                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="接入 SQLite、标准 JSON 导出、CSV 导入规则和本地只读 API，让其他应用或 AI 可以读取同一份目录数据。" />
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="当前能力" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="Windows 端已支持元件目录检索、新增、编辑、删除、批量 CSV 导入和库存信息维护，并使用项目目录中的 SQLite 作为写入真源。" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="数据与集成" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="应用会生成标准 JSON 快照，并提供受 Bearer 令牌保护的本地 HTTP API，供其他应用或自动化工具读取和同步同一份元件目录。" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
         </StackPanel>

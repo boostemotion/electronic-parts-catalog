@@ -9,11 +9,45 @@
 
     <ScrollViewer Padding="36,24,36,24" VerticalScrollBarVisibility="Auto">
         <StackPanel MaxWidth="800" HorizontalAlignment="Left" Spacing="24">
+            <StackPanel.ChildrenTransitions>
+                <TransitionCollection>
+                    <EntranceThemeTransition IsStaggeringEnabled="False" />
+                </TransitionCollection>
+            </StackPanel.ChildrenTransitions>
             <!-- 标题行 -->
             <StackPanel Spacing="6">
                 <TextBlock FontSize="28" FontWeight="Bold" Text="批量导入元件" />
                 <TextBlock Style="{StaticResource MutedBodyTextStyle}" Text="直接选择本地 CSV 文件，或者在此粘贴 CSV 文本进行解析入库。" />
             </StackPanel>
+
+            <!-- AI 辅助提取 -->
+            <Border
+                Padding="24"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="14">
+                <StackPanel Spacing="12">
+                    <TextBlock FontSize="18" FontWeight="SemiBold" Text="AI 辅助提取" />
+                    <TextBlock
+                        Style="{StaticResource MutedBodyTextStyle}"
+                        Text="先把标准提示词和原始 BOM 交给 AI；无法确认的料必须排除，不能以“未分类”进入数据库。"
+                        TextWrapping="Wrap" />
+                    <Button
+                        HorizontalAlignment="Left"
+                        Click="CopyAiPromptButton_Click"
+                        Style="{ThemeResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE8C8;" FontSize="14" />
+                            <TextBlock Text="复制 AI 提示词" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock
+                        Style="{StaticResource MutedBodyTextStyle}"
+                        Text="AI 输出仍需经过本地预览和提交门禁。"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
 
             <!-- 导入主卡片 -->
             <Border

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using ComponentCatalogWinUI.Pages;
+using ComponentCatalogWinUI.Services;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -9,6 +10,9 @@ namespace ComponentCatalogWinUI;
 
 public sealed partial class MainWindow : Window
 {
+    private bool _shutdownStarted;
+    private bool _allowClose;
+
     public MainWindow()
     {
         InitializeComponent();
@@ -18,9 +22,39 @@ public sealed partial class MainWindow : Window
         AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Tall;
         AppWindow.SetIcon("Assets/AppIcon.ico");
         AppTitleBar.Title = "电子元件入库台";
+        AppWindow.Closing += AppWindow_Closing;
 
         NavFrame.Navigated += NavFrame_Navigated;
-        NavFrame.Navigate(typeof(HomePage));
+        NavFrame.Navigate(typeof(HomePage), null, new Microsoft.UI.Xaml.Media.Animation.SuppressNavigationTransitionInfo());
+    }
+
+    private async void AppWindow_Closing(AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (_allowClose)
+        {
+            return;
+        }
+
+        args.Cancel = true;
+        if (_shutdownStarted)
+        {
+            return;
+        }
+
+        _shutdownStarted = true;
+        try
+        {
+            await CatalogWorkspaceService.Current.ShutdownAsync();
+        }
+        catch (Exception exception)
+        {
+            AppLogger.WriteStartup($"App.Shutdown.Error {exception.Message}");
+        }
+        finally
+        {
+            _allowClose = true;
+            Close();
+        }
     }
 
     private void TitleBar_PaneToggleRequested(TitleBar sender, object args)
@@ -68,7 +102,7 @@ public sealed partial class MainWindow : Window
         // 避免重复导航导致向后退栈(BackStack)中压入重复页面，从而出现多余的返回箭头
         if (NavFrame.CurrentSourcePageType != targetPageType)
         {
-            NavFrame.Navigate(targetPageType);
+            NavFrame.Navigate(targetPageType, null, args.RecommendedNavigationTransitionInfo);
         }
     }
 

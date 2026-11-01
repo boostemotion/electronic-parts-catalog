@@ -1,11 +1,10 @@
+using ComponentCatalogCore.Diagnostics;
+
 namespace ComponentCatalogWinUI.Services;
 
 public static class AppLogger
 {
-    public static string LogDirectory => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "ComponentCatalogWinUI",
-        "Logs");
+    public static string LogDirectory => CatalogStoragePaths.LogDirectory;
 
     public static string StartupLogPath => Path.Combine(LogDirectory, "startup.log");
 
@@ -25,8 +24,9 @@ public static class AppLogger
     {
         try
         {
+            CatalogStoragePaths.EnsureStorageLayout();
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            File.AppendAllText(path, $"{DateTime.Now:O} {message}{Environment.NewLine}");
+            File.AppendAllText(path, $"{DateTime.Now:O} {DiagnosticRedactor.Redact(message)}{Environment.NewLine}");
         }
         catch
         {

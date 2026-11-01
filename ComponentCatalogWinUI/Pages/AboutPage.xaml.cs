@@ -1,12 +1,14 @@
+using System.Reflection;
 using Microsoft.UI.Xaml.Controls;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace ComponentCatalogWinUI.Pages;
 
 public sealed partial class AboutPage : Page
 {
+    public string AppVersion { get; } = Assembly.GetExecutingAssembly().GetName().Version is { } version
+        ? $"{version.Major}.{version.Minor}"
+        : "1.1";
+
     public AboutPage()
     {
         InitializeComponent();

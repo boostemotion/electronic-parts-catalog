@@ -3,45 +3,85 @@
     x:Class="ComponentCatalogWinUI.Pages.HomePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:ComponentCatalogWinUI.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:ComponentCatalogWinUI.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:ComponentCatalogWinUI.Models"
+    HorizontalAlignment="Stretch"
+    HorizontalContentAlignment="Stretch"
+    MinWidth="0"
     mc:Ignorable="d">
 
-    <Grid ColumnSpacing="16" Padding="20,16,20,16">
+    <Page.Resources>
+        <converters:SelectedCardValueConverter x:Key="SelectedCardValueConverter" />
+    </Page.Resources>
+
+    <Grid
+        x:Name="HomeLayoutRoot"
+        ColumnSpacing="0"
+        HorizontalAlignment="Stretch"
+        MinWidth="0"
+        Padding="20,16,20,16"
+        SizeChanged="HomeLayoutRoot_SizeChanged">
+        <Grid.ChildrenTransitions>
+            <TransitionCollection>
+                <EntranceThemeTransition IsStaggeringEnabled="False" />
+                <RepositionThemeTransition IsStaggeringEnabled="False" />
+            </TransitionCollection>
+        </Grid.ChildrenTransitions>
         <Grid.ColumnDefinitions>
-            <!-- 左侧分类与结构化筛选 -->
-            <ColumnDefinition Width="240" />
-            <!-- 中间检索结果网格大盘 -->
-            <ColumnDefinition Width="*" />
-            <!-- 右侧属性编辑表单 -->
-            <ColumnDefinition Width="280" />
+            <ColumnDefinition x:Name="FilterColumn" Width="0" />
+            <ColumnDefinition x:Name="ResultsColumn" Width="*" />
+            <ColumnDefinition x:Name="EditorColumn" Width="0" />
         </Grid.ColumnDefinitions>
 
-        <!-- ================= 第 0 列：分类与筛选 (左) ================= -->
-        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+        <!-- This single filter host moves into the flyout outside ExtraWide mode. -->
+        <Border
+            x:Name="FilterPane"
+            Grid.Column="0"
+            Style="{StaticResource SidebarSurfaceStyle}">
+            <ScrollViewer
+                Padding="0,0,8,0"
+                Background="Transparent"
+                HorizontalScrollBarVisibility="Disabled"
+                VerticalScrollBarVisibility="Auto"
+                VerticalScrollMode="Enabled">
             <StackPanel Spacing="14">
-                <!-- 分类卡片 -->
                 <Border
                     Padding="14"
                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="18">
+                        CornerRadius="14">
                     <StackPanel Spacing="12">
                         <TextBlock FontSize="18" FontWeight="SemiBold" Text="分类" />
-                        <StackPanel x:Name="SidebarCategoryHost" Spacing="8" />
+                            <ComboBox
+                                x:Name="SidebarMajorCategoryComboBox"
+                                Header="大类"
+                                DisplayMemberPath="Label"
+                                ItemsSource="{x:Bind MajorCategoryFilters, Mode=OneWay}"
+                                SelectedValue="{x:Bind SelectedMajorCategoryId, Mode=TwoWay}"
+                                SelectedValuePath="Id"
+                                SelectionChanged="SidebarMajorCategoryComboBox_SelectionChanged" />
+                            <ComboBox
+                                x:Name="SidebarSubcategoryComboBox"
+                                Header="子类"
+                                DisplayMemberPath="Label"
+                                IsEnabled="{x:Bind IsSubcategoryFilterEnabled, Mode=OneWay}"
+                                ItemsSource="{x:Bind SubcategoryFilters, Mode=OneWay}"
+                                SelectedValue="{x:Bind SelectedSubCategoryId, Mode=TwoWay}"
+                                SelectedValuePath="Id"
+                                SelectionChanged="SidebarSubcategoryComboBox_SelectionChanged" />
                     </StackPanel>
                 </Border>
 
-                <!-- 结构化筛选卡片 -->
                 <Border
                     Padding="14"
                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="18">
+                        CornerRadius="14">
                     <StackPanel Spacing="12">
                         <TextBlock FontSize="18" FontWeight="SemiBold" Text="结构化筛选" />
                         <ComboBox
@@ -63,19 +103,35 @@
                 </Border>
             </StackPanel>
         </ScrollViewer>
+        </Border>
 
-        <!-- ================= 第 1 列：检索结果网格大盘 (中) ================= -->
-        <Grid Grid.Column="1" RowSpacing="18">
+        <Grid
+            x:Name="ResultsPane"
+            Grid.Column="1"
+            HorizontalAlignment="Stretch"
+            MinWidth="0"
+            RowSpacing="18">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <Grid ColumnSpacing="16" Margin="0,0,0,8">
+            <Grid
+                x:Name="SearchToolbar"
+                Margin="0,0,0,8"
+                ColumnSpacing="12"
+                HorizontalAlignment="Stretch"
+                MinWidth="0"
+                RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition x:Name="SearchToolbarActionRow" Height="0" />
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition x:Name="SearchInputColumn" Width="*" />
+                    <ColumnDefinition x:Name="FilterButtonColumn" Width="Auto" />
+                    <ColumnDefinition x:Name="NewComponentButtonColumn" Width="Auto" />
                 </Grid.ColumnDefinitions>
             <AutoSuggestBox
                 x:Name="SearchBox"
@@ -83,101 +139,134 @@
                 QueryIcon="Find"
                 TextChanged="SearchBox_TextChanged"
                 VerticalAlignment="Center" />
-            <Button
+                <StackPanel
+                    x:Name="SearchToolbarActions"
                 Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="8"
+                    VerticalAlignment="Center">
+                    <Button
+                        x:Name="FilterButton"
+                        Click="FilterButton_Click"
+                        Content="筛选"
+                        Visibility="Collapsed" />
+                    <Button
+                        x:Name="NewComponentButton"
                 Click="NewComponentButton_Click"
                 Content="新建空白元件"
-                Style="{StaticResource AccentButtonStyle}"
-                VerticalAlignment="Center" />
+                        Style="{StaticResource AccentButtonStyle}" />
+                </StackPanel>
         </Grid>
 
-            <Grid Grid.Row="1" ColumnSpacing="12">
+            <Grid x:Name="StatsPanel" Grid.Row="1" ColumnSpacing="12" MinWidth="0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Style="{StaticResource SectionCardStyle}" Padding="18,16">
+                <Border x:Name="TotalCountCard" Style="{StaticResource SectionCardStyle}" Padding="18,16" MinWidth="0" Visibility="Collapsed">
                 <StackPanel Spacing="6">
-                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="目录总数" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="目录总数" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                     <TextBlock FontSize="30" FontWeight="SemiBold" Text="{x:Bind TotalCount, Mode=OneWay}" />
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="1" Style="{StaticResource SectionCardStyle}" Padding="18,16">
+                <Border x:Name="OwnedCountCard" Grid.Column="1" Style="{StaticResource SectionCardStyle}" Padding="18,16" MinWidth="0" Visibility="Collapsed">
                 <StackPanel Spacing="6">
-                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="已持有" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="已持有" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                     <TextBlock FontSize="30" FontWeight="SemiBold" Text="{x:Bind OwnedCount, Mode=OneWay}" />
                 </StackPanel>
             </Border>
 
-            <Border Grid.Column="2" Style="{StaticResource SectionCardStyle}" Padding="18,16">
+                <Border x:Name="CategoryCountCard" Grid.Column="2" Style="{StaticResource SectionCardStyle}" Padding="18,16" MinWidth="0" Visibility="Collapsed">
                 <StackPanel Spacing="6">
-                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="分类数" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="分类数" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                     <TextBlock FontSize="30" FontWeight="SemiBold" Text="{x:Bind CategoryCount, Mode=OneWay}" />
                 </StackPanel>
             </Border>
+
+                <TextBlock
+                    x:Name="CompactStatsSummary"
+                    Grid.ColumnSpan="3"
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Text="{x:Bind CompactStatisticsSummary, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="NoWrap"
+                    VerticalAlignment="Center"
+                    Visibility="Visible" />
         </Grid>
 
-            <Border Grid.Row="2" Style="{StaticResource SectionCardStyle}">
-            <Grid>
+            <Border
+                Grid.Row="2"
+                HorizontalAlignment="Stretch"
+                MinWidth="0"
+                Style="{StaticResource SectionCardStyle}">
+                <Grid HorizontalAlignment="Stretch" MinWidth="0">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Spacing="4">
                     <TextBlock FontSize="20" FontWeight="SemiBold" Text="检索结果" />
-                </StackPanel>
 
                 <GridView
                     x:Name="ComponentGrid"
                     Grid.Row="1"
-                    IsItemClickEnabled="True"
-                    ItemClick="ComponentGrid_ItemClick"
                     ItemsSource="{x:Bind FilteredItems, Mode=OneWay}"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
                     Margin="0,18,0,0"
-                    SelectedItem="{x:Bind SelectedItem, Mode=OneWay}"
+                        MinWidth="0"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        ScrollViewer.HorizontalScrollMode="Disabled"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        ScrollViewer.VerticalScrollMode="Enabled"
+                        SelectionChanged="ComponentGrid_SelectionChanged"
                     SelectionMode="Single"
                     SizeChanged="ComponentGrid_SizeChanged"
                     Visibility="{x:Bind ResultListVisibility, Mode=OneWay}">
-                    
+                        <GridView.ItemContainerTransitions>
+                            <TransitionCollection>
+                                <RepositionThemeTransition IsStaggeringEnabled="False" />
+                                <EntranceThemeTransition IsStaggeringEnabled="False" />
+                                <AddDeleteThemeTransition />
+                            </TransitionCollection>
+                        </GridView.ItemContainerTransitions>
                     <GridView.ItemContainerStyle>
                         <Style TargetType="GridViewItem">
                             <Setter Property="Margin" Value="0,0,12,12" />
                             <Setter Property="Padding" Value="0" />
                             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
                             <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                                <Setter Property="UseSystemFocusVisuals" Value="False" />
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="GridViewItem">
                                         <Grid CornerRadius="14" Background="Transparent">
-                                            <!-- 底层卡片内容 -->
-                                            <ContentPresenter x:Name="ContentPresenter"
-                                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                <ContentPresenter
+                                                    x:Name="ContentPresenter"
                                                               Content="{TemplateBinding Content}"
+                                                    ContentTemplate="{TemplateBinding ContentTemplate}"
                                                               HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
                                                               VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-
-                                            <!-- 中层：悬浮微光背景层 -->
-                                            <Border x:Name="HoverBackground"
-                                                    CornerRadius="14"
+                                                <Border
+                                                    x:Name="HoverBackground"
                                                     Background="{ThemeResource SystemAccentColor}"
-                                                    Opacity="0"
-                                                    IsHitTestVisible="False" />
-                                            
-                                            <!-- 顶层：选中状态边框层 -->
-                                            <Border x:Name="SelectionBorder"
                                                     CornerRadius="14"
-                                                    BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
-                                                    BorderThickness="1.5"
-                                                    Opacity="0"
-                                                    IsHitTestVisible="False" />
-                                            
+                                                    IsHitTestVisible="False"
+                                                    Opacity="0" />
                                             <VisualStateManager.VisualStateGroups>
                                                 <VisualStateGroup x:Name="CommonStates">
-                                                    <VisualState x:Name="Normal" />
+                                                        <VisualStateGroup.Transitions>
+                                                            <VisualTransition GeneratedDuration="0:0:0.2" />
+                                                        </VisualStateGroup.Transitions>
+                                                        <VisualState x:Name="Normal">
+                                                            <VisualState.Setters>
+                                                                <Setter Target="HoverBackground.Opacity" Value="0" />
+                                                            </VisualState.Setters>
+                                                        </VisualState>
                                                     <VisualState x:Name="PointerOver">
                                                         <VisualState.Setters>
                                                             <Setter Target="HoverBackground.Opacity" Value="0.08" />
@@ -188,17 +277,24 @@
                                                             <Setter Target="HoverBackground.Opacity" Value="0.15" />
                                                         </VisualState.Setters>
                                                     </VisualState>
-                                                </VisualStateGroup>
-                                                <VisualStateGroup x:Name="SelectionStates">
-                                                    <VisualState x:Name="Unselected" />
-                                                    <VisualState x:Name="Selected">
+                                                        <VisualState x:Name="PointerOverSelected">
                                                         <VisualState.Setters>
-                                                            <Setter Target="SelectionBorder.Opacity" Value="1" />
+                                                                <Setter Target="HoverBackground.Opacity" Value="0.08" />
+                                                            </VisualState.Setters>
+                                                        </VisualState>
+                                                        <VisualState x:Name="SelectedPointerOver">
+                                                            <VisualState.Setters>
+                                                                <Setter Target="HoverBackground.Opacity" Value="0.08" />
                                                         </VisualState.Setters>
                                                     </VisualState>
-                                                    <VisualState x:Name="SelectedUnfocused">
+                                                        <VisualState x:Name="PressedSelected">
                                                         <VisualState.Setters>
-                                                            <Setter Target="SelectionBorder.Opacity" Value="1" />
+                                                                <Setter Target="HoverBackground.Opacity" Value="0.15" />
+                                                            </VisualState.Setters>
+                                                        </VisualState>
+                                                        <VisualState x:Name="SelectedPressed">
+                                                            <VisualState.Setters>
+                                                                <Setter Target="HoverBackground.Opacity" Value="0.15" />
                                                         </VisualState.Setters>
                                                     </VisualState>
                                                 </VisualStateGroup>
@@ -218,22 +314,25 @@
                     
                     <GridView.ItemTemplate>
                         <DataTemplate x:DataType="model:ComponentItem">
+                                <Grid
+                                    Height="112"
+                                    HorizontalAlignment="Stretch"
+                                    PointerPressed="ComponentCard_PointerPressed">
                             <Border
-                                Height="145"
-                                Padding="12"
+                                        x:Name="CardSurface"
+                                        Padding="10"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
+                                        BorderBrush="{x:Bind IsSelected, Mode=OneWay, Converter={StaticResource SelectedCardValueConverter}, ConverterParameter=Brush}"
+                                        BorderThickness="{x:Bind IsSelected, Mode=OneWay, Converter={StaticResource SelectedCardValueConverter}, ConverterParameter=Thickness}"
                                 CornerRadius="14"
                                 HorizontalAlignment="Stretch">
-                                <Grid RowSpacing="6">
+                                        <Grid RowSpacing="4">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
                                     </Grid.RowDefinitions>
 
-                                    <!-- 头部区：Icon + 名称/型号/位置 (位置移到左侧垂直排版) -->
                                     <Grid Grid.Row="0" ColumnSpacing="10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
@@ -241,8 +340,8 @@
                                         </Grid.ColumnDefinitions>
 
                                         <Border
-                                            Width="38"
-                                            Height="38"
+                                                    Width="34"
+                                                    Height="34"
                                             Background="{ThemeResource AccentFillColorSecondaryBrush}"
                                             CornerRadius="10"
                                             VerticalAlignment="Top">
@@ -254,39 +353,29 @@
                                         </Border>
 
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                            <TextBlock FontSize="16" FontWeight="SemiBold" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                            <TextBlock FontSize="12" Style="{StaticResource SectionCaptionTextStyle}" Text="{x:Bind PartNumber}" TextTrimming="CharacterEllipsis" MaxLines="1" />
-                                            <StackPanel Orientation="Horizontal" Spacing="4" Opacity="0.7">
-                                                <FontIcon Glyph="&#xE81D;" FontSize="11" VerticalAlignment="Center" />
-                                                <TextBlock FontSize="11" Text="{x:Bind Location}" TextTrimming="CharacterEllipsis" MaxLines="1" VerticalAlignment="Center" />
+                                                    <TextBlock FontSize="16" FontWeight="SemiBold" MaxLines="1" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock FontSize="12" MaxLines="1" Style="{StaticResource SectionCaptionTextStyle}" Text="{x:Bind PartNumber}" TextTrimming="CharacterEllipsis" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="4" Opacity="0.7" Visibility="{x:Bind LocationVisibility}">
+                                                        <FontIcon FontSize="11" Glyph="&#xE81D;" VerticalAlignment="Center" />
+                                                        <TextBlock FontSize="11" MaxLines="1" Text="{x:Bind Location}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Grid>
 
-                                    <!-- 标签区 (字号调整为较清晰的 11) -->
                                     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
-                                        <Border Padding="6,2" Background="{ThemeResource ControlFillColorSecondaryBrush}" CornerRadius="4">
+                                                <Border MinHeight="24" Padding="8,2" Background="{ThemeResource ControlFillColorSecondaryBrush}" CornerRadius="12" VerticalAlignment="Center">
                                             <TextBlock FontSize="11" Text="{x:Bind Category}" />
                                         </Border>
-                                        <Border Padding="6,2" Background="{ThemeResource AccentFillColorSecondaryBrush}" CornerRadius="4">
+                                                <Border MinHeight="24" Padding="8,2" Background="{ThemeResource AccentFillColorSecondaryBrush}" CornerRadius="12" VerticalAlignment="Center">
                                             <TextBlock FontSize="11" Text="{x:Bind Package}" />
                                         </Border>
-                                        <Border Padding="6,2" Background="{ThemeResource ControlFillColorTertiaryBrush}" CornerRadius="4">
+                                                <Border MinHeight="24" Padding="8,2" Background="{ThemeResource ControlFillColorTertiaryBrush}" CornerRadius="12" VerticalAlignment="Center">
                                             <TextBlock FontSize="11" Text="{x:Bind OwnedBadgeText}" />
                                         </Border>
                                     </StackPanel>
-
-                                    <!-- 备注区 (字号调整为 12) -->
-                                    <TextBlock
-                                        Grid.Row="2"
-                                        FontSize="12"
-                                        Opacity="0.7"
-                                        Text="{x:Bind Notes}"
-                                        TextTrimming="CharacterEllipsis"
-                                        MaxLines="2"
-                                        VerticalAlignment="Top" />
                                 </Grid>
                             </Border>
+                                </Grid>
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>
@@ -312,41 +401,62 @@
         </Border>
     </Grid>
 
+        <!-- This one editor host is reparented into the narrow-layout ContentDialog. -->
     <Border
+            x:Name="EditorPane"
             Grid.Column="2"
-            Background="{ThemeResource LayerFillColorDefaultBrush}"
-            BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
-            BorderThickness="1,0,0,0">
-            <ScrollViewer Padding="20">
+            MinWidth="0"
+            Style="{StaticResource SidebarSurfaceStyle}">
+            <ScrollViewer
+                Padding="4,4,8,4"
+                Background="Transparent"
+                VerticalScrollBarVisibility="Auto">
                 <StackPanel Spacing="16">
-                    <Border Style="{StaticResource SectionCardStyle}">
+                    <Border
+                        Padding="16"
+                        CornerRadius="14"
+                        Style="{StaticResource SectionCardStyle}">
                         <StackPanel Spacing="14">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
                             <StackPanel Spacing="4">
-                                <TextBlock FontSize="24" FontWeight="SemiBold" Text="{x:Bind DetailTitle, Mode=OneWay}" />
-                                <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{x:Bind DetailSubtitle, Mode=OneWay}" />
+                                    <TextBlock FontSize="24" FontWeight="SemiBold" Text="{x:Bind DetailTitle, Mode=OneWay}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{x:Bind DetailSubtitle, Mode=OneWay}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
                             </StackPanel>
+                                <Button
+                                    x:Name="EditorCloseButton"
+                                    Grid.Column="1"
+                                    Click="EditorCloseButton_Click"
+                                    Content="关闭"
+                                    ToolTipService.ToolTip="关闭编辑面板"
+                                    Visibility="Collapsed" />
+                            </Grid>
 
                             <TextBox Header="名称" Text="{x:Bind EditableName, Mode=TwoWay}" />
                             <TextBox Header="型号" Text="{x:Bind EditablePartNumber, Mode=TwoWay}" />
-                            <AutoSuggestBox
-                                x:Name="CategoryEditorBox"
-                                Header="分类"
-                                TextMemberPath="Value"
-                                PlaceholderText="输入新分类"
-                                Text="{x:Bind EditableCategory, Mode=TwoWay}"
-                                TextChanged="CategoryEditorBox_TextChanged"
-                                QuerySubmitted="CategoryEditorBox_QuerySubmitted">
-                                <AutoSuggestBox.QueryIcon>
-                                    <FontIcon Glyph="&#xE70D;" />
-                                </AutoSuggestBox.QueryIcon>
-                            </AutoSuggestBox>
+                            <ComboBox
+                                Header="大类"
+                                DisplayMemberPath="Label"
+                                ItemsSource="{x:Bind EditorMajorCategories, Mode=OneWay}"
+                                SelectedValue="{x:Bind EditableMajorCategoryId, Mode=TwoWay}"
+                                SelectedValuePath="Id"
+                                SelectionChanged="EditorMajorCategoryComboBox_SelectionChanged" />
+                            <ComboBox
+                                Header="子类"
+                                DisplayMemberPath="Label"
+                                ItemsSource="{x:Bind EditorSubcategories, Mode=OneWay}"
+                                SelectedValue="{x:Bind EditableSubCategoryId, Mode=TwoWay}"
+                                SelectedValuePath="Id" />
                             <AutoSuggestBox
                                 x:Name="PackageEditorBox"
                                 Header="封装"
-                                TextMemberPath="Value"
                                 PlaceholderText="输入新封装"
                                 Text="{x:Bind EditablePackage, Mode=TwoWay}"
                                 TextChanged="PackageEditorBox_TextChanged"
+                                TextMemberPath="Value"
                                 QuerySubmitted="PackageEditorBox_QuerySubmitted">
                                 <AutoSuggestBox.QueryIcon>
                                     <FontIcon Glyph="&#xE70D;" />
@@ -362,15 +472,15 @@
                             <TextBox Header="关键词" PlaceholderText="regulator | 3.3v" Text="{x:Bind EditableKeywords, Mode=TwoWay}" />
                             <TextBox Header="替代料" PlaceholderText="ME6211 | XC6206" Text="{x:Bind EditableSubstitutes, Mode=TwoWay}" />
                             <TextBox Header="参数" Text="{x:Bind EditableAttributes, Mode=TwoWay}" />
-                            <ToggleSwitch Header="是否持有" IsOn="{x:Bind EditableOwned, Mode=TwoWay}" OnContent="持有" OffContent="未持有" />
+                            <ToggleSwitch Header="是否持有" IsOn="{x:Bind EditableOwned, Mode=TwoWay}" OffContent="未持有" OnContent="持有" />
                             <TextBox
-                                Header="备注"
-                                AcceptsReturn="True"
                                 Height="80"
+                                AcceptsReturn="True"
+                                Header="备注"
                                 Text="{x:Bind EditableNotes, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
 
-                            <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{x:Bind LastActionText, Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{x:Bind LastActionText, Mode=OneWay}" TextWrapping="Wrap" />
 
                             <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
                                 <Button Click="DeleteButton_Click" Content="删除" IsEnabled="{x:Bind HasSelectedItem, Mode=OneWay}" />
@@ -378,7 +488,6 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
-
                 </StackPanel>
             </ScrollViewer>
         </Border>

@@ -44,10 +44,123 @@
 
             <Border Style="{StaticResource SectionCardStyle}">
                 <StackPanel Spacing="8">
-                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="接口状态" />
-                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="本地 HTTP API 绑定 127.0.0.1，支持分类、搜索、详情、新增、覆盖和删除。" />
-                    <TextBlock Text="{Binding ApiStatusText}" TextWrapping="WrapWholeWords" />
-                    <Button Content="复制 API 地址" Click="CopyApiBaseUrlButton_Click" />
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="手机访问" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="在同一可信 Wi-Fi 上打开后，手机会自动发现 Windows 并只读同步目录。HTTP 无 TLS，请勿在公共网络使用。" TextWrapping="Wrap" />
+                    <ToggleSwitch x:Name="PhoneSyncToggle" Header="允许手机自动发现和同步" Toggled="PhoneSyncToggle_Toggled" />
+                    <TextBlock Text="{Binding PhoneSyncStatusText}" TextWrapping="WrapWholeWords" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="网络：" />
+                        <TextBlock Text="{Binding PhoneNetworkText}" TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                    <Button Content="重新启动手机访问" Click="RestartPhoneAccessButton_Click" />
+
+                    <Expander Header="高级诊断">
+                        <StackPanel Spacing="8" Padding="0,8,0,0">
+                            <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="本机管理 API（Bearer）：" />
+                            <TextBlock Text="{Binding LocalApiUrl}" TextWrapping="WrapWholeWords" />
+                            <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="手机只读快照 URL：" />
+                            <TextBlock Text="{Binding LanApiUrl}" TextWrapping="WrapWholeWords" />
+                            <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="UDP 发现端口：10850。手机无需 Token；Token 仅用于本机管理 API。" TextWrapping="Wrap" />
+                            <ComboBox x:Name="LanAddressComboBox" Header="高级：选择私有 IPv4" DisplayMemberPath="DisplayName" SelectedValuePath="Address" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="应用高级网络选择" Click="ApplyLanSettingsButton_Click" />
+                                <Button Content="复制只读快照 URL" Click="CopyLanApiUrlButton_Click" />
+                                <Button Content="复制管理 Token" Click="CopyApiTokenButton_Click" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="轮换管理 Token" Click="RotateApiTokenButton_Click" />
+                                <Button Content="防火墙 / URL ACL 指南" Click="ShowFirewallGuidanceButton_Click" />
+                                <Button Content="停止全部接口" Click="ReleaseApiPortButton_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="Android 安装包发布" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="手机更新只会下载此固定发布目录中的已验证 APK。" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding AndroidReleaseStatusText}" TextWrapping="WrapWholeWords" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding AndroidReleaseVersionText}" TextWrapping="WrapWholeWords" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding AndroidReleaseIntegrityText}" TextWrapping="WrapWholeWords" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="发布时间：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding AndroidReleasePublishedAtText}" TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="重新生成 Android 安装包" Click="RebuildAndroidReleaseButton_Click" />
+                        <Button Content="检查发布文件" Click="CheckAndroidReleaseButton_Click" />
+                        <Button Content="打开 APK 目录" Click="OpenAndroidReleaseDirectoryButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="运行诊断" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="产品版本：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding ProductVersionText}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="分类版本：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding TaxonomyVersionText}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="本机 API：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding LocalApiUrl}" TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="局域网只读端点：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding LanApiUrl}" TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="API 状态：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding ApiStatusText}" TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="发现状态：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding PhoneSyncStatusText}" TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="备份状态：" />
+                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding BackupStatusText}" TextWrapping="WrapWholeWords" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="打开日志目录" Click="OpenLogDirectoryButton_Click" />
+                        <Button Content="打开 APK 目录" Click="OpenAndroidReleaseDirectoryButton_Click" />
+                        <Button Content="复制已脱敏诊断" Click="CopyDiagnosticsButton_Click" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SectionCardStyle}">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="备份与恢复" />
+                    <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="备份包含 SQLite 真源和 JSON 快照。恢复会先创建当前数据的安全备份，并在失败时自动回滚。" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="立即备份" Click="CreateBackupButton_Click" />
+                        <Button Content="打开备份目录" Click="OpenBackupDirectoryButton_Click" />
+                        <Button Content="恢复所选备份" Click="RestoreSelectedBackupButton_Click" />
+                    </StackPanel>
+                    <ListView x:Name="BackupListView" ItemsSource="{x:Bind Backups}" SelectionMode="Single" MaxHeight="240">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="4" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock Text="{Binding CreatedDisplay}" />
+                                        <TextBlock Style="{StaticResource SectionCaptionTextStyle}" Text="{Binding ComponentCountDisplay}" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding StatusDisplay}" TextWrapping="Wrap" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
                 </StackPanel>
             </Border>
 

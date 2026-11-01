@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ComponentCatalogCore;
 using ComponentCatalogCore.Utilities;
 using Microsoft.UI.Dispatching;
 
@@ -12,9 +13,20 @@ public sealed class CatalogRuntimeState : INotifyPropertyChanged
     private string _databasePath = string.Empty;
     private string _snapshotPath = string.Empty;
     private string _apiBaseUrl = string.Empty;
+    private string _localApiUrl = string.Empty;
+    private string _lanApiUrl = string.Empty;
+    private bool _lanEnabled;
+    private string _selectedLanAddress = string.Empty;
+    private IReadOnlyList<CatalogNetworkAddress> _availableLanAddresses = [];
+    private string _apiStatusDetail = "未启动";
     private string _exportedAt = string.Empty;
     private int _componentCount;
     private string _categoriesDisplay = "尚未加载";
+    private string _androidReleaseStatusText = "尚未检查 Android 安装包";
+    private string _androidReleaseVersionText = "未发布";
+    private string _androidReleaseIntegrityText = "未检查";
+    private string _androidReleasePublishedAtText = "未知";
+    private string _backupStatusText = "尚未检查备份";
     private readonly DispatcherQueue? _dispatcherQueue;
 
     private CatalogRuntimeState()
@@ -52,11 +64,69 @@ public sealed class CatalogRuntimeState : INotifyPropertyChanged
         }
     }
 
-    public string ApiStatusText => string.IsNullOrWhiteSpace(ApiBaseUrl)
-        ? "未启动"
-        : $"运行中 · {ApiBaseUrl}";
+    public string LocalApiUrl
+    {
+        get => _localApiUrl;
+        private set => SetField(ref _localApiUrl, value);
+    }
+
+    public string LanApiUrl
+    {
+        get => _lanApiUrl;
+        private set => SetField(ref _lanApiUrl, value);
+    }
+
+    public bool LanEnabled
+    {
+        get => _lanEnabled;
+        private set
+        {
+            if (SetField(ref _lanEnabled, value))
+            {
+                OnPropertyChanged(nameof(PhoneSyncStatusText));
+            }
+        }
+    }
+
+    public string SelectedLanAddress
+    {
+        get => _selectedLanAddress;
+        private set
+        {
+            if (SetField(ref _selectedLanAddress, value))
+            {
+                OnPropertyChanged(nameof(PhoneNetworkText));
+            }
+        }
+    }
+
+    public IReadOnlyList<CatalogNetworkAddress> AvailableLanAddresses
+    {
+        get => _availableLanAddresses;
+        private set => SetField(ref _availableLanAddresses, value);
+    }
+
+    public string ApiStatusText => string.IsNullOrWhiteSpace(LocalApiUrl)
+        ? _apiStatusDetail
+        : $"运行中 · {LocalApiUrl}";
+
+    public string ApiStatusDetail => _apiStatusDetail;
+
+    public string PhoneSyncStatusText => LanEnabled
+        ? "已开放只读查询"
+        : _apiStatusDetail.StartsWith("手机访问启动失败", StringComparison.Ordinal)
+            ? _apiStatusDetail
+            : "未开启";
+
+    public string PhoneNetworkText => string.IsNullOrWhiteSpace(SelectedLanAddress)
+        ? "未检测到可用私有网络"
+        : SelectedLanAddress;
 
     public string LogDirectory => AppLogger.LogDirectory;
+
+    public string ProductVersionText => $"v{ProductVersion.ProductVersionName}（Android code {ProductVersion.AndroidVersionCode}）";
+
+    public string TaxonomyVersionText => $"v{ProductVersion.TaxonomyVersion}";
 
     public string ExportedAt
     {
@@ -92,15 +162,78 @@ public sealed class CatalogRuntimeState : INotifyPropertyChanged
 
     public string ComponentCountText => $"元件数：{ComponentCount}";
 
+    public string AndroidReleaseStatusText
+    {
+        get => _androidReleaseStatusText;
+        private set => SetField(ref _androidReleaseStatusText, value);
+    }
+
+    public string AndroidReleaseVersionText
+    {
+        get => _androidReleaseVersionText;
+        private set => SetField(ref _androidReleaseVersionText, value);
+    }
+
+    public string AndroidReleaseIntegrityText
+    {
+        get => _androidReleaseIntegrityText;
+        private set => SetField(ref _androidReleaseIntegrityText, value);
+    }
+
+    public string AndroidReleasePublishedAtText
+    {
+        get => _androidReleasePublishedAtText;
+        private set => SetField(ref _androidReleasePublishedAtText, value);
+    }
+
+    public string BackupStatusText
+    {
+        get => _backupStatusText;
+        private set => SetField(ref _backupStatusText, value);
+    }
+
+    public void UpdateAndroidReleaseStatus(string status, string version, string integrity, string publishedAt)
+    {
+        AndroidReleaseStatusText = status;
+        AndroidReleaseVersionText = version;
+        AndroidReleaseIntegrityText = integrity;
+        AndroidReleasePublishedAtText = publishedAt;
+    }
+
+    public void UpdateBackupStatus(string status) => BackupStatusText = status;
+
     public void UpdatePaths(string databasePath, string snapshotPath)
     {
         DatabasePath = databasePath;
         SnapshotPath = snapshotPath;
     }
 
+    public void UpdateAvailableLanAddresses(IReadOnlyList<CatalogNetworkAddress> addresses, string? selectedAddress)
+    {
+        AvailableLanAddresses = addresses;
+        SelectedLanAddress = selectedAddress ?? string.Empty;
+    }
+
+    public void UpdateApiEndpoints(string? localApiUrl, string? lanApiUrl, string? detail = null)
+    {
+        LocalApiUrl = localApiUrl ?? string.Empty;
+        ApiBaseUrl = LocalApiUrl;
+        LanApiUrl = lanApiUrl ?? string.Empty;
+        LanEnabled = !string.IsNullOrWhiteSpace(LanApiUrl);
+        _apiStatusDetail = detail ?? (string.IsNullOrWhiteSpace(LocalApiUrl) ? "未启动" : string.Empty);
+        OnPropertyChanged(nameof(ApiStatusText));
+        OnPropertyChanged(nameof(ApiStatusDetail));
+        OnPropertyChanged(nameof(PhoneSyncStatusText));
+    }
+
     public void UpdateApiBaseUrl(string? apiBaseUrl)
     {
-        ApiBaseUrl = apiBaseUrl ?? string.Empty;
+        UpdateApiEndpoints(apiBaseUrl, null);
+    }
+
+    public void UpdateApiUnavailable(string error)
+    {
+        UpdateApiEndpoints(null, null, $"不可用 · {error}");
     }
 
     public async Task RefreshSnapshotSummaryAsync()

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Windows.ApplicationModel.DataTransfer;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using ComponentCatalogCore.Persistence;
@@ -17,6 +18,14 @@ public sealed partial class ImportPage : Page
 
         _repositoryOptions = CatalogStoragePaths.CreateRepositoryOptions();
         CatalogRuntimeState.Current.UpdatePaths(_repositoryOptions.DatabasePath, _repositoryOptions.ExportPath);
+    }
+
+    private void CopyAiPromptButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dataPackage = new DataPackage();
+        dataPackage.SetText(AiBomPromptProvider.Prompt);
+        Clipboard.SetContent(dataPackage);
+        ImportStatusText.Text = "AI 提示词已复制。请连同原始 BOM 一起交给 AI，无法确认的行不要导入。";
     }
 
     private async void SelectCsvFileButton_Click(object sender, RoutedEventArgs e)
