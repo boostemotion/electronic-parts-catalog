@@ -1,5 +1,10 @@
 [CmdletBinding()]
-param()
+param(
+    [string]$JdkHome = $(if ($env:JAVA_HOME) { $env:JAVA_HOME } else { 'C:\Program Files\Java\jdk-21.0.10' }),
+    [string]$AndroidSdk = $(if ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } elseif ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { 'D:\Android\Sdk' }),
+    [string]$StageRoot = $(if ($env:CATALOG_ANDROID_NATIVE_STAGE_ROOT) { $env:CATALOG_ANDROID_NATIVE_STAGE_ROOT } else { 'D:\AI\partshelf-android-native-verify' }),
+    [string]$GradleUserHome = $(if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { '' })
+)
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
@@ -7,16 +12,20 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
 $androidSource = Join-Path $repositoryRoot 'Android\android'
 $capacitorAndroidSource = Join-Path $repositoryRoot 'Android\node_modules\@capacitor\android\capacitor'
-$nativeStageRoot = 'D:\AI\partshelf-android-native-verify'
+$nativeStageRoot = $StageRoot
 $androidProject = Join-Path $nativeStageRoot 'Android\android'
 $capacitorAndroidStage = Join-Path $nativeStageRoot 'Android\node_modules\@capacitor\android\capacitor'
-$jdkHome = 'C:\Program Files\Java\jdk-21.0.10'
-$gradleUserHome = 'D:\AI\partshelf-gradle-user-home'
+$jdkHome = $JdkHome
+$androidSdk = $AndroidSdk
+if (-not $GradleUserHome) {
+    $GradleUserHome = Join-Path $nativeStageRoot 'gradle-home'
+}
+$gradleUserHome = $GradleUserHome
 $javaExecutable = Join-Path $jdkHome 'bin\java.exe'
 $gradleWrapper = Join-Path $androidProject 'gradlew.bat'
 
 if (-not (Test-Path -LiteralPath $javaExecutable -PathType Leaf)) {
-    throw "Pinned JDK was not found: $javaExecutable"
+    throw "JDK was not found: $javaExecutable. Pass -JdkHome or set JAVA_HOME."
 }
 if (-not (Test-Path -LiteralPath (Join-Path $androidSource 'gradlew.bat') -PathType Leaf)) {
     throw "Gradle wrapper was not found: $androidSource"
@@ -26,6 +35,18 @@ if (-not (Test-Path -LiteralPath $capacitorAndroidSource -PathType Container)) {
 }
 if (-not (Test-Path -LiteralPath (Join-Path $repositoryRoot 'version.json') -PathType Leaf)) {
     throw "Version source was not found: $repositoryRoot\version.json"
+}
+if (-not (Test-Path -LiteralPath $androidSdk -PathType Container)) {
+    throw "Android SDK was not found: $androidSdk. Pass -AndroidSdk or set ANDROID_SDK_ROOT/ANDROID_HOME."
+}
+
+$javaVersionText = & $javaExecutable -version 2>&1 | Out-String
+if ($javaVersionText -notmatch 'version "(\d+)') {
+    throw "Unable to determine the JDK major version from: $javaVersionText"
+}
+$javaMajorVersion = [int]$Matches[1]
+if ($javaMajorVersion -lt 21) {
+    throw "Android native verification requires JDK 21 or newer, but $jdkHome reports JDK $javaMajorVersion."
 }
 
 New-Item -ItemType Directory -Path $androidProject -Force | Out-Null
@@ -39,14 +60,19 @@ if ($LASTEXITCODE -gt 7) {
 }
 Copy-Item -LiteralPath (Join-Path $repositoryRoot 'version.json') -Destination (Join-Path $nativeStageRoot 'version.json') -Force
 
+$localPropertiesPath = Join-Path $androidProject 'local.properties'
+$sdkDirectoryValue = $androidSdk.Replace('\', '/')
+Set-Content -LiteralPath $localPropertiesPath -Value "sdk.dir=$sdkDirectoryValue" -Encoding ascii
+
 New-Item -ItemType Directory -Path $gradleUserHome -Force | Out-Null
 $env:JAVA_HOME = $jdkHome
 $env:GRADLE_USER_HOME = $gradleUserHome
+$env:ANDROID_SDK_ROOT = $androidSdk
 $env:PATH = "$jdkHome\bin;$env:PATH"
 
 & $javaExecutable -version
 if ($LASTEXITCODE -ne 0) {
-    throw "Pinned JDK failed its version check with exit code $LASTEXITCODE."
+    throw "The configured JDK failed its version check with exit code $LASTEXITCODE."
 }
 
 function Invoke-AndroidGradle {

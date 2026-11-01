@@ -8,11 +8,13 @@ import { test } from "node:test";
 import {
   buildReleaseManifest,
   createCommandInvocation,
+  ensureAndroidSdkLocalProperties,
   parseApkBadging,
   parseSignerFingerprint,
   publishReleaseAtomically,
   readReleaseSigningContract,
   resolveAndroidPublishStagingDirectory,
+  resolveAndroidSdkRoot,
   resolveNpmInvocation,
   validateReleaseArtifact,
   withStagedCandidateApk,
@@ -124,6 +126,29 @@ test("Unicode candidate APKs are copied to an ASCII staging directory and stagin
       /inspection failed/,
     );
     assert.deepEqual(await readdir(stagingDirectory), []);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("Android SDK root resolves from the environment with absolute-path validation", () => {
+  assert.equal(resolveAndroidSdkRoot({}), "D:/Android/Sdk");
+  assert.equal(resolveAndroidSdkRoot({ ANDROID_HOME: "D:/Android/Sdk" }), "D:/Android/Sdk");
+  assert.equal(
+    resolveAndroidSdkRoot({ ANDROID_SDK_ROOT: "D:/first-sdk", ANDROID_HOME: "D:/second-sdk" }),
+    "D:/first-sdk",
+  );
+  assert.throws(() => resolveAndroidSdkRoot({ ANDROID_SDK_ROOT: "relative/sdk" }), /absolute/i);
+});
+
+test("Android SDK local.properties is generated for the resolved SDK path", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "partshelf-android-sdk-"));
+  try {
+    await ensureAndroidSdkLocalProperties(directory, "D:/Android/Sdk");
+    assert.equal(
+      await readFile(join(directory, "local.properties"), "utf8"),
+      "sdk.dir=D:/Android/Sdk\n",
+    );
   } finally {
     await rm(directory, { recursive: true, force: true });
   }

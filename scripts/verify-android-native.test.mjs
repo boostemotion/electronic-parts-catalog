@@ -7,11 +7,16 @@ import { test } from "node:test";
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const verificationScript = join(repositoryRoot, "scripts", "verify-android-native.ps1");
 
-test("native Android verification gate pins an isolated Windows environment and validates release contracts", async () => {
+test("native Android verification gate supports configurable toolchain paths and validates release contracts", async () => {
   const script = await readFile(verificationScript, "utf8");
 
-  assert.match(script, /\$jdkHome\s*=\s*'C:\\Program Files\\Java\\jdk-21\.0\.10'/);
-  assert.match(script, /\$gradleUserHome\s*=\s*'D:\\AI\\partshelf-gradle-user-home'/);
+  assert.match(script, /\[string\]\$JdkHome/);
+  assert.match(script, /\[string\]\$AndroidSdk/);
+  assert.match(script, /\[string\]\$StageRoot/);
+  assert.match(script, /\[string\]\$GradleUserHome/);
+  assert.match(script, /ANDROID_SDK_ROOT/);
+  assert.match(script, /ANDROID_HOME/);
+  assert.match(script, /sdk\.dir=/);
   assert.match(script, /\$env:JAVA_HOME\s*=\s*\$jdkHome/);
   assert.match(script, /\$env:GRADLE_USER_HOME\s*=\s*\$gradleUserHome/);
   assert.match(script, /testDebugUnitTest/);

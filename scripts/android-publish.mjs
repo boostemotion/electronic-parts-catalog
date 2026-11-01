@@ -15,7 +15,7 @@ import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 
-const ANDROID_SDK_ROOT = "D:/Android/Sdk";
+const DEFAULT_ANDROID_SDK_ROOT = "D:/Android/Sdk";
 const APK_PATH = "/mobile/app.apk";
 const PACKAGE_NAME = "com.partshelf.catalog";
 const DEFAULT_STAGING_DIRECTORY = "D:/AI/component-catalog-publish-staging";
@@ -50,6 +50,38 @@ export function resolveAndroidPublishStagingDirectory(environment = process.env)
     normalizeEnvironmentValue(environment.CATALOG_ANDROID_PUBLISH_STAGING_DIR) ?? DEFAULT_STAGING_DIRECTORY,
     "Android publish staging directory",
   );
+}
+
+export function resolveAndroidSdkRoot(environment = process.env) {
+  for (const name of ["ANDROID_SDK_ROOT", "ANDROID_HOME"]) {
+    const value = normalizeEnvironmentValue(environment[name]);
+    if (!value) {
+      continue;
+    }
+    if (!isAbsolute(value)) {
+      throw new Error(`${name} must be an absolute path.`);
+    }
+    return value;
+  }
+  return DEFAULT_ANDROID_SDK_ROOT;
+}
+
+export async function ensureAndroidSdkLocalProperties(androidProject, sdkRoot) {
+  const nativeProject = requireText(androidProject, "Android native project path");
+  const resolvedSdkRoot = requireText(sdkRoot, "Android SDK root");
+  const localPropertiesPath = join(nativeProject, "local.properties");
+  const expectedContent = `sdk.dir=${resolvedSdkRoot.replaceAll("\\", "/")}\n`;
+  let currentContent = "";
+  try {
+    currentContent = await readFile(localPropertiesPath, "utf8");
+  } catch (error) {
+    if (error?.code !== "ENOENT") {
+      throw error;
+    }
+  }
+  if (currentContent.replaceAll("\r\n", "\n") !== expectedContent) {
+    await writeFile(localPropertiesPath, expectedContent, "utf8");
+  }
 }
 
 function validateExternalStagingDirectory(stagingDirectory, repositoryRoot) {
@@ -238,7 +270,7 @@ async function resolveBuildTool(buildToolsDirectory, names) {
   throw new Error(`Android build-tools is missing ${names.join(" or ")}.`);
 }
 
-async function findAndroidBuildTools(sdkRoot = ANDROID_SDK_ROOT) {
+async function findAndroidBuildTools(sdkRoot = resolveAndroidSdkRoot()) {
   const buildToolsRoot = join(sdkRoot, "build-tools");
   const entries = await readdir(buildToolsRoot, { withFileTypes: true });
   const versions = entries
@@ -345,15 +377,17 @@ async function main() {
 
   const androidRoot = join(repositoryRoot, "Android");
   const nativeProject = join(androidRoot, "android");
+  const androidSdkRoot = resolveAndroidSdkRoot();
   const npm = resolveNpmInvocation();
   const gradle = process.platform === "win32" ? join(nativeProject, "gradlew.bat") : "./gradlew";
+  await ensureAndroidSdkLocalProperties(nativeProject, androidSdkRoot);
   await run(npm.command, [...npm.prefixArguments, "run", "build"], { cwd: androidRoot });
   await run(npm.command, [...npm.prefixArguments, "run", "android:sync"], { cwd: androidRoot });
   await run(gradle, ["assembleRelease", "--no-daemon"], { cwd: nativeProject });
 
   const candidateApk = join(nativeProject, "app", "build", "outputs", "apk", "release", "app-release.apk");
   await access(candidateApk);
-  const [tools, release] = await Promise.all([findAndroidBuildTools(), readExpectedRelease(repositoryRoot)]);
+  const [tools, release] = await Promise.all([findAndroidBuildTools(androidSdkRoot), readExpectedRelease(repositoryRoot)]);
   const stagingDirectory = resolveAndroidPublishStagingDirectory();
   validateExternalStagingDirectory(stagingDirectory, repositoryRoot);
   const hostedDirectory = join(repositoryRoot, "发布包", "Android");
