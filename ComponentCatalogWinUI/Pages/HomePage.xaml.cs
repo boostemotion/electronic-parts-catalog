@@ -529,6 +529,21 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             return;
         }
 
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "删除该元件？",
+            Content = $"将删除“{SelectedItem.Name}”（{SelectedItem.PartNumber}），并同步更新 JSON 快照。删除后无法撤销。",
+            PrimaryButtonText = "删除",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
         try
         {
             var deletedName = SelectedItem.Name;

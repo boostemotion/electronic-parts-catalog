@@ -21,6 +21,15 @@ public partial class App : Application
     public App()
     {
         InitializeComponent();
+
+        if (!SingleInstanceGuard.TryAcquire())
+        {
+            AppLogger.WriteStartup("SingleInstance.SecondaryExit");
+            SingleInstanceGuard.ActivateExistingInstance();
+            Environment.Exit(0);
+            return;
+        }
+
         UnhandledException += App_UnhandledException;
         AppLogger.WriteStartup("App ctor");
     }
