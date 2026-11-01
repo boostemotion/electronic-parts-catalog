@@ -172,7 +172,7 @@ function calculateScore(component: ComponentRecord, query: SearchQuery): SearchR
     return null;
   }
 
-  if (query.package && component.package !== query.package) {
+  if (query.package && normalize(component.package) !== normalize(query.package)) {
     return null;
   }
 
