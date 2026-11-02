@@ -72,11 +72,13 @@
                 HorizontalAlignment="Stretch">
                 <Frame.ContentTransitions>
                     <TransitionCollection>
-                        <NavigationThemeTransition>
-                            <NavigationThemeTransition.DefaultNavigationTransitionInfo>
-                                <SuppressNavigationTransitionInfo />
-                            </NavigationThemeTransition.DefaultNavigationTransitionInfo>
-                        </NavigationThemeTransition>
+                        <!--
+                          The framework NavigationThemeTransition could not be interrupted safely:
+                          rapid clicks on the navigation pane crashed Microsoft.UI.Xaml.dll with
+                          E_INVALIDARG and left a ghost of the previous page on screen. The page
+                          swap animation is now driven by UiMotion.PlayPageSwap instead, and
+                          every navigation passes SuppressNavigationTransitionInfo explicitly.
+                        -->
                     </TransitionCollection>
                 </Frame.ContentTransitions>
             </Frame>

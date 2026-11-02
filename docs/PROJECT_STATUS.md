@@ -47,6 +47,17 @@
 - **侧边栏事件去抖**：刷新子类列表时临时抑制 ComboBox 的 `SelectionChanged`，避免一次点击触发多轮筛选；编辑面板的大类/子类刷新增加递归保护。
 - **侧边栏下拉复用**：封装与持有状态 ComboBox 的 `ItemsSource` 只在首次绑定，不再每次筛选都重设，减少无谓的列表重建。
 
+## WinUI 崩溃修复（2026-11-02）
+
+依据 Windows 错误报告（WER）两次崩溃签名完全一致（`combase.dll` / `0x80070057` E_INVALIDARG），确认是 XAML 回调中抛出的托管异常被 COM 层重抛导致的进程终止，而非端口或数据问题。修复内容：
+
+- **导航转场**：移除框架 `NavigationThemeTransition`，所有导航显式传入 `SuppressNavigationTransitionInfo`，改由 `UiMotion.PlayPageSwap` 做 120–150ms 交叉淡入。框架转场在快速连点时被反复中断会直接崩溃，同时旧页面残影会留在屏幕上。
+- **目录变更订阅**：改为单例静态入口（`HomePage.NotifyActiveInstanceCatalogChanged`），不再按页面实例订阅，避免页面缓存重建后出现多个监听器、并发替换 GridView `ItemsSource`。
+- **列表刷新串行化**：`ReloadAllItemsAsync` 增加 `SemaphoreSlim` 门闩，重叠刷新会让 XAML 在布局过程中两次替换 `ItemsSource`。
+- **元素重挂载安全**：新增 `DetachFromCurrentParent`，在把 `FilterPane`/`EditorPane` 移入 Flyout 或 ContentDialog 前先从当前宿主摘除。WinUI 对「已有父节点的元素被加入新宿主」抛 E_INVALIDARG，且该异常经 COM 重抛会杀掉进程。
+- **转换器容错**：`SelectedCardValueConverter` 改用 `TryGetValue` + 回退画刷，转换器内异常不再逃逸到 XAML 引擎。
+- **全局异常兜底**：`App.UnhandledException` 标记 `e.Handled = true` 并写日志，避免单个 XAML 异常终止整个应用。
+
 ## 环境限制（摘要，详见验证记录）
 
 - 本机 .NET 10 HttpListener 与 Windows 11 build 26200 不兼容，13 个 API 测试无法在本机跑通（非 URL ACL、非代码问题）。

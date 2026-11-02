@@ -258,11 +258,20 @@ public sealed class CatalogRuntimeState : INotifyPropertyChanged
     {
         if (_dispatcherQueue is not null && !_dispatcherQueue.HasThreadAccess)
         {
-            _dispatcherQueue.TryEnqueue(() => CatalogChanged?.Invoke(this, EventArgs.Empty));
+            _dispatcherQueue.TryEnqueue(() => RaiseCatalogChanged());
             return;
         }
 
+        RaiseCatalogChanged();
+    }
+
+    private void RaiseCatalogChanged()
+    {
         CatalogChanged?.Invoke(this, EventArgs.Empty);
+
+        // The catalog page listens through a single static entry point so that recreating the
+        // page can never leave several listeners behind.
+        ComponentCatalogWinUI.Pages.HomePage.NotifyActiveInstanceCatalogChanged();
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)

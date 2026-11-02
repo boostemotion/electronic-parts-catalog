@@ -57,5 +57,10 @@ public partial class App : Application
     private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         AppLogger.WriteStartup($"UnhandledException {e.Exception}");
+
+        // XAML re-throws managed exceptions through COM, which terminates the process
+        // (E_INVALIDARG inside combase.dll). Marking the exception as handled keeps the
+        // application alive and lets the user continue working; the details are logged.
+        e.Handled = true;
     }
 }

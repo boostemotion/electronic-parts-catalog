@@ -99,47 +99,25 @@ public sealed partial class MainWindow : Window
 
         if (targetPageType is null) return;
 
-        // Rapid clicks land while the previous navigation is still tearing down its entrance
-        // animation; navigating again at that moment crashes inside Microsoft.UI.Xaml. Queue the
-        // latest target and apply it once the dispatcher drains instead of navigating re-entrantly.
-        if (_navigationInFlight)
+        // 页面实例已缓存（NavigationCacheMode=Enabled），切换是即时的。
+        // 这里刻意不传 RecommendedNavigationTransitionInfo：那会启用 NavigationThemeTransition，
+        // 快速连点时转场动画被反复中断会在 Microsoft.UI.Xaml.dll 内触发 E_INVALIDARG 崩溃，
+        // 同时旧页面的残影会停留在屏幕上。转场统一由 Frame.ContentTransitions 里的
+        // SuppressNavigationTransitionInfo 关闭，页面内部元素仍保留自己的入场动效。
+        if (NavFrame.CurrentSourcePageType != targetPageType)
         {
-            _pendingNavigationType = targetPageType;
-            return;
-        }
-
-        _navigationInFlight = true;
-        try
-        {
-            if (NavFrame.CurrentSourcePageType != targetPageType)
-            {
-                NavFrame.Navigate(targetPageType, null, args.RecommendedNavigationTransitionInfo);
-            }
-        }
-        finally
-        {
-            NavFrame.DispatcherQueue.TryEnqueue(() =>
-            {
-                _navigationInFlight = false;
-                if (_pendingNavigationType is { } pending && NavFrame.CurrentSourcePageType != pending)
-                {
-                    _pendingNavigationType = null;
-                    NavFrame.Navigate(pending, null, new Microsoft.UI.Xaml.Media.Animation.SuppressNavigationTransitionInfo());
-                }
-                else
-                {
-                    _pendingNavigationType = null;
-                }
-            });
+            NavFrame.Navigate(targetPageType, null, new Microsoft.UI.Xaml.Media.Animation.SuppressNavigationTransitionInfo());
         }
     }
-
-    private bool _navigationInFlight;
-    private Type? _pendingNavigationType;
 
     private void NavFrame_Navigated(object sender, NavigationEventArgs e)
     {
         AppTitleBar.IsBackButtonVisible = NavFrame.CanGoBack;
+
+        if (e.Content is FrameworkElement content)
+        {
+            UiMotion.PlayPageSwap(content);
+        }
     }
 
 }

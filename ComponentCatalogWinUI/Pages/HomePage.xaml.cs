@@ -86,6 +86,9 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
     private readonly DispatcherQueueTimer _componentGridResizeTimer;
     private XamlRoot? _observedXamlRoot;
     private bool _isInitialized;
+    private bool _isPageLoaded;
+    private bool _needsRefreshAfterReactivation;
+    private readonly SemaphoreSlim _reloadGate = new(1, 1);
     private bool _isSynchronizingGridSelection;
     private bool _skipNextRuntimeCatalogRefresh;
     private int _filterRefreshRequestId;
@@ -110,10 +113,26 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         LoadTaxonomyOptions();
         _filterFlyout.Closed += FilterFlyout_Closed;
         CatalogRuntimeState.Current.UpdatePaths(_repositoryOptions.DatabasePath, _repositoryOptions.ExportPath);
-        CatalogRuntimeState.Current.CatalogChanged += RuntimeCatalogChanged;
+
+        // Exactly one listener, no matter how many HomePage instances are created.
+        // The page is cached (NavigationCacheMode=Enabled) but the frame may still discard and
+        // recreate it; per-instance event subscriptions would then stack up and run several
+        // concurrent list refreshes, each replacing the GridView ItemsSource mid-layout.
+        _activeInstance = this;
 
         Loaded += HomePage_Loaded;
         Unloaded += HomePage_Unloaded;
+    }
+
+    private static HomePage? _activeInstance;
+
+    /// <summary>
+    /// Single static entry point for catalog change notifications. HomePage registers itself as
+    /// the active instance instead of subscribing per instance.
+    /// </summary>
+    internal static void NotifyActiveInstanceCatalogChanged()
+    {
+        _activeInstance?.RuntimeCatalogChanged(_activeInstance, EventArgs.Empty);
     }
 
     public IReadOnlyList<ComponentItem> FilteredItems { get; private set; } = [];
@@ -323,6 +342,8 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
     private async void HomePage_Loaded(object sender, RoutedEventArgs e)
     {
+        _isPageLoaded = true;
+
         UiMotion.ConfigurePanelMotion(EditorPane, fromRight: true);
         UiMotion.ConfigurePanelMotion(FilterPane, fromRight: false);
 
@@ -330,12 +351,23 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         ApplyResponsiveLayout(GetResponsiveContentWidth(HomeLayoutRoot.ActualWidth));
 
         // The page is cached (NavigationCacheMode=Enabled) so returning to this tab reuses the
-        // instance. Unloaded removed this subscription, so re-attach it every time; combining
-        // an identical delegate is a no-op, so this is safe for the first load too.
-        CatalogRuntimeState.Current.CatalogChanged += RuntimeCatalogChanged;
-
+        // instance and Loaded fires again. The catalog-change subscription lives for the whole
+        // instance lifetime (see the constructor), so only the refresh itself is deferred here.
         if (_isInitialized)
         {
+            if (_needsRefreshAfterReactivation)
+            {
+                _needsRefreshAfterReactivation = false;
+                try
+                {
+                    await ReloadAllItemsAsync(SelectedItem?.Id);
+                }
+                catch (Exception ex)
+                {
+                    AppLogger.WritePage($"HomePage.Reactivate.Error {ex}");
+                }
+            }
+
             return;
         }
 
@@ -362,9 +394,9 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
     private void HomePage_Unloaded(object sender, RoutedEventArgs e)
     {
+        _isPageLoaded = false;
         CancelPendingFilterRefresh();
         _componentGridResizeTimer.Stop();
-        CatalogRuntimeState.Current.CatalogChanged -= RuntimeCatalogChanged;
         if (_observedXamlRoot is not null)
         {
             _observedXamlRoot.Changed -= XamlRoot_Changed;
@@ -382,6 +414,14 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         if (_skipNextRuntimeCatalogRefresh)
         {
             _skipNextRuntimeCatalogRefresh = false;
+            return;
+        }
+
+        // While the page is detached (cached, but not on screen) do not touch the visual tree;
+        // refresh once the page is shown again instead.
+        if (!_isPageLoaded)
+        {
+            _needsRefreshAfterReactivation = true;
             return;
         }
 
@@ -702,25 +742,36 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
     private async Task ReloadAllItemsAsync(string? preferredSelectionId = null)
     {
-        CancelPendingFilterRefresh();
-        var records = await _repository.ListComponentsAsync();
-
-        _allItems.Clear();
-        _allRecords.Clear();
-        _itemsById.Clear();
-        foreach (var record in records)
+        // Serialize reloads. Two overlapping reloads each replace the GridView ItemsSource while
+        // the previous replacement is still being realized, which makes XAML throw E_INVALIDARG
+        // (0x80070057) from inside Microsoft.UI.Xaml.dll and kills the process.
+        await _reloadGate.WaitAsync();
+        try
         {
-            var item = ComponentItem.FromRecord(record);
-            _allItems.Add(item);
-            _allRecords.Add(record);
-            _itemsById[item.Id] = item;
-        }
+            CancelPendingFilterRefresh();
+            var records = await _repository.ListComponentsAsync();
 
-        RefreshAvailablePackages();
-        RefreshEditSuggestions();
-        NotifyCatalogStateChanged();
-        await RefreshFilteredItemsAsync(preferredSelectionId);
-        await CatalogRuntimeState.Current.RefreshSnapshotSummaryAsync();
+            _allItems.Clear();
+            _allRecords.Clear();
+            _itemsById.Clear();
+            foreach (var record in records)
+            {
+                var item = ComponentItem.FromRecord(record);
+                _allItems.Add(item);
+                _allRecords.Add(record);
+                _itemsById[item.Id] = item;
+            }
+
+            RefreshAvailablePackages();
+            RefreshEditSuggestions();
+            NotifyCatalogStateChanged();
+            await RefreshFilteredItemsAsync(preferredSelectionId);
+            await CatalogRuntimeState.Current.RefreshSnapshotSummaryAsync();
+        }
+        finally
+        {
+            _reloadGate.Release();
+        }
     }
 
     private void LoadTaxonomyOptions()
@@ -976,8 +1027,15 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
         _isSynchronizingGridSelection = true;
         try
-    {
+        {
             ComponentGrid.SelectedItem = item;
+        }
+        catch (Exception ex)
+        {
+            // The GridView can be mid-update when the result set was just swapped. Selecting an
+            // item that is no longer in the ItemsSource throws, and XAML turns that into a
+            // process-level crash, so it is caught here instead.
+            AppLogger.WritePage($"SyncGridSelection.Error {ex}");
         }
         finally
         {
@@ -1208,7 +1266,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             return;
         }
 
-        HomeLayoutRoot.Children.Remove(FilterPane);
+        DetachFromCurrentParent(FilterPane);
         _filterFlyout.Content = FilterPane;
     }
 
@@ -1226,9 +1284,47 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             _filterFlyout.Content = null;
         }
 
-        HomeLayoutRoot.Children.Remove(FilterPane);
+        DetachFromCurrentParent(FilterPane);
         Grid.SetColumn(FilterPane, 0);
         HomeLayoutRoot.Children.Add(FilterPane);
+    }
+
+    /// <summary>
+    /// Removes an element from whichever host currently owns it. WinUI throws
+    /// E_INVALIDARG (0x80070057) when an element that still has a parent is added to a
+    /// different host, and that failure is re-thrown through COM which kills the process.
+    /// </summary>
+    private void DetachFromCurrentParent(FrameworkElement element)
+    {
+        try
+        {
+            // A Flyout keeps its content alive in its own popup host, so the element can still
+            // report the flyout as its parent after the page was detached and re-attached.
+            if (ReferenceEquals(_filterFlyout.Content, element))
+            {
+                _filterFlyout.Content = null;
+            }
+
+            switch (element.Parent)
+            {
+                case Panel panel:
+                    panel.Children.Remove(element);
+                    break;
+                case Border border:
+                    border.Child = null;
+                    break;
+                case ContentControl contentControl:
+                    contentControl.Content = null;
+                    break;
+                case ContentPresenter presenter:
+                    presenter.Content = null;
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            AppLogger.WritePage($"DetachFromCurrentParent.Error {ex}");
+        }
     }
 
     private void FilterFlyout_Closed(object? sender, object e)
@@ -1288,11 +1384,9 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             return;
         }
 
-        if (!HomeLayoutRoot.Children.Contains(EditorPane))
-        {
-            Grid.SetColumn(EditorPane, 2);
-            HomeLayoutRoot.Children.Add(EditorPane);
-        }
+        DetachFromCurrentParent(EditorPane);
+        Grid.SetColumn(EditorPane, 2);
+        HomeLayoutRoot.Children.Add(EditorPane);
     }
 
     private async Task ShowEditorOverlayIfNarrowAsync()
@@ -1302,7 +1396,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             return;
         }
 
-        HomeLayoutRoot.Children.Remove(EditorPane);
+        DetachFromCurrentParent(EditorPane);
         var dialog = new ContentDialog
         {
             CloseButtonText = "关闭",
@@ -1325,11 +1419,9 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         {
             dialog.Content = null;
             _isEditorOverlayOpen = false;
-            if (HomeLayoutRoot is not null && !HomeLayoutRoot.Children.Contains(EditorPane))
-            {
-                Grid.SetColumn(EditorPane, 2);
-                HomeLayoutRoot.Children.Add(EditorPane);
-            }
+            DetachFromCurrentParent(EditorPane);
+            Grid.SetColumn(EditorPane, 2);
+            HomeLayoutRoot.Children.Add(EditorPane);
 
             if (IsDockedEditorLayout(_responsiveLayout))
             {
