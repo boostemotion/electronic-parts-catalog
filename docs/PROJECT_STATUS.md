@@ -49,14 +49,16 @@
 
 ## WinUI 崩溃修复（2026-11-02）
 
-依据 Windows 错误报告（WER）两次崩溃签名完全一致（`combase.dll` / `0x80070057` E_INVALIDARG），确认是 XAML 回调中抛出的托管异常被 COM 层重抛导致的进程终止，而非端口或数据问题。修复内容：
+依据 Windows 错误报告（WER）三次崩溃签名完全一致（`combase.dll` / `0x80070057` E_INVALIDARG），确认是 XAML 回调中抛出的托管异常被 COM 层重抛导致的进程终止，而非端口或数据问题。修复内容：
 
 - **导航转场**：移除框架 `NavigationThemeTransition`，所有导航显式传入 `SuppressNavigationTransitionInfo`，改由 `UiMotion.PlayPageSwap` 做 120–150ms 交叉淡入。框架转场在快速连点时被反复中断会直接崩溃，同时旧页面残影会留在屏幕上。
+- **动效属性修正（真正的崩溃根因）**：`Visual.StartAnimation("Translation", …)` 非法——`Visual` 没有 `Translation` 属性（它属于 `CompositionPropertySet`），会抛 `ArgumentException`「参数错误」(E_INVALIDARG)，并被 XAML 经 COM 重抛终结进程。改用合法的 `"Offset"` 属性后崩溃消失。
 - **目录变更订阅**：改为单例静态入口（`HomePage.NotifyActiveInstanceCatalogChanged`），不再按页面实例订阅，避免页面缓存重建后出现多个监听器、并发替换 GridView `ItemsSource`。
 - **列表刷新串行化**：`ReloadAllItemsAsync` 增加 `SemaphoreSlim` 门闩，重叠刷新会让 XAML 在布局过程中两次替换 `ItemsSource`。
 - **元素重挂载安全**：新增 `DetachFromCurrentParent`，在把 `FilterPane`/`EditorPane` 移入 Flyout 或 ContentDialog 前先从当前宿主摘除。WinUI 对「已有父节点的元素被加入新宿主」抛 E_INVALIDARG，且该异常经 COM 重抛会杀掉进程。
 - **转换器容错**：`SelectedCardValueConverter` 改用 `TryGetValue` + 回退画刷，转换器内异常不再逃逸到 XAML 引擎。
-- **全局异常兜底**：`App.UnhandledException` 标记 `e.Handled = true` 并写日志，避免单个 XAML 异常终止整个应用。
+- **全局异常兜底**：`App.UnhandledException` 标记 `e.Handled = true`；新增首现异常（`FirstChanceException`）日志，可在 XAML 吞掉异常前捕获原始堆栈——这是定位本类崩溃的唯一手段。
+- **自动化回归**：新增基于 UI Automation 的回归脚本（`.hermes-work/uiauto/`），可脚本化复现「快速切换侧边栏」「点击设置」「点击元件卡片」三条崩溃路径并断言进程存活。
 
 ## 环境限制（摘要，详见验证记录）
 

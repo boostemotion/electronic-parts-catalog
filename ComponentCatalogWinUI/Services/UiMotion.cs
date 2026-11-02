@@ -43,30 +43,7 @@ public static class UiMotion
     /// </summary>
     public static void PlayListRefresh(UIElement element)
     {
-        try
-        {
-            var uiSettings = new UISettings();
-            if (!uiSettings.AnimationsEnabled) return;
-
-            var visual = ElementCompositionPreview.GetElementVisual(element);
-            var compositor = visual.Compositor;
-
-            var opacity = compositor.CreateScalarKeyFrameAnimation();
-            opacity.InsertKeyFrame(0.0f, 0.35f);
-            opacity.InsertKeyFrame(1.0f, 1.0f);
-            opacity.Duration = TimeSpan.FromMilliseconds(150);
-            visual.StartAnimation("Opacity", opacity);
-
-            var translation = compositor.CreateVector3KeyFrameAnimation();
-            translation.InsertKeyFrame(0.0f, new Vector3(0, 8f, 0));
-            translation.InsertKeyFrame(1.0f, Vector3.Zero);
-            translation.Duration = TimeSpan.FromMilliseconds(170);
-            visual.StartAnimation("Translation", translation);
-        }
-        catch
-        {
-            // Animation is cosmetic; never let it break filtering.
-        }
+        PlayFade(element, 0.35f, 8f, 150, 170);
     }
 
     /// <summary>
@@ -75,6 +52,17 @@ public static class UiMotion
     /// crashed Microsoft.UI.Xaml.dll and left a ghost of the previous page on screen.
     /// </summary>
     public static void PlayPageSwap(UIElement element)
+    {
+        PlayFade(element, 0.0f, 10f, 120, 150);
+    }
+
+    /// <summary>
+    /// Fades and lifts an element using composition properties that actually exist.
+    /// A Visual exposes "Offset" and "Opacity", but not "Translation" — animating "Translation"
+    /// throws E_INVALIDARG (0x80070057), which WinUI re-throws through COM and turns into a
+    /// process-level crash.
+    /// </summary>
+    private static void PlayFade(UIElement element, float fromOpacity, float lift, int fadeMilliseconds, int slideMilliseconds)
     {
         try
         {
@@ -85,20 +73,20 @@ public static class UiMotion
             var compositor = visual.Compositor;
 
             var opacity = compositor.CreateScalarKeyFrameAnimation();
-            opacity.InsertKeyFrame(0.0f, 0.0f);
+            opacity.InsertKeyFrame(0.0f, fromOpacity);
             opacity.InsertKeyFrame(1.0f, 1.0f);
-            opacity.Duration = TimeSpan.FromMilliseconds(120);
+            opacity.Duration = TimeSpan.FromMilliseconds(fadeMilliseconds);
             visual.StartAnimation("Opacity", opacity);
 
-            var translation = compositor.CreateVector3KeyFrameAnimation();
-            translation.InsertKeyFrame(0.0f, new Vector3(0, 10f, 0));
-            translation.InsertKeyFrame(1.0f, Vector3.Zero);
-            translation.Duration = TimeSpan.FromMilliseconds(150);
-            visual.StartAnimation("Translation", translation);
+            var offset = compositor.CreateVector3KeyFrameAnimation();
+            offset.InsertKeyFrame(0.0f, new Vector3(0, lift, 0));
+            offset.InsertKeyFrame(1.0f, Vector3.Zero);
+            offset.Duration = TimeSpan.FromMilliseconds(slideMilliseconds);
+            visual.StartAnimation("Offset", offset);
         }
-        catch
+        catch (Exception exception)
         {
-            // Animation is cosmetic; never let it break navigation.
+            AppLogger.WritePage($"UiMotion error: {exception.Message}");
         }
     }
 }

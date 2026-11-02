@@ -31,7 +31,57 @@ public partial class App : Application
         }
 
         UnhandledException += App_UnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += AppDomain_UnhandledException;
+        AppDomain.CurrentDomain.FirstChanceException += AppDomain_FirstChanceException;
         AppLogger.WriteStartup("App ctor");
+    }
+
+    private static int _firstChanceExceptionCount;
+
+    /// <summary>
+    /// XAML re-throws managed exceptions through COM, which terminates the process before the
+    /// UnhandledException event can run. First-chance logging captures the original exception
+    /// together with its stack trace, which is the only way to diagnose those crashes.
+    /// </summary>
+    private static void AppDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+    {
+        if (Interlocked.Increment(ref _firstChanceExceptionCount) > 200)
+        {
+            return;
+        }
+
+        var exception = e.Exception;
+        if (exception is System.Threading.Tasks.TaskCanceledException or OperationCanceledException)
+        {
+            return;
+        }
+
+        // These are expected on this machine and already reported through the normal paths.
+        if (exception is System.Net.HttpListenerException)
+        {
+            return;
+        }
+
+        if (exception is InvalidOperationException invalidOperation &&
+            invalidOperation.Message.Contains("本地 API", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        try
+        {
+            AppLogger.WriteStartup($"FirstChance {exception}");
+        }
+        catch
+        {
+            // Logging must never throw.
+        }
+    }
+
+    private static void AppDomain_UnhandledException(object? sender, System.UnhandledExceptionEventArgs e)
+    {
+        var exception = e.ExceptionObject as Exception;
+        AppLogger.WriteStartup($"AppDomain.UnhandledException {exception}");
     }
 
     /// <summary>
