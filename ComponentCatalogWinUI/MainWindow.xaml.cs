@@ -98,13 +98,44 @@ public sealed partial class MainWindow : Window
         }
 
         if (targetPageType is null) return;
-        
-        // 避免重复导航导致向后退栈(BackStack)中压入重复页面，从而出现多余的返回箭头
-        if (NavFrame.CurrentSourcePageType != targetPageType)
+
+        // Rapid clicks land while the previous navigation is still tearing down its entrance
+        // animation; navigating again at that moment crashes inside Microsoft.UI.Xaml. Queue the
+        // latest target and apply it once the dispatcher drains instead of navigating re-entrantly.
+        if (_navigationInFlight)
         {
-            NavFrame.Navigate(targetPageType, null, args.RecommendedNavigationTransitionInfo);
+            _pendingNavigationType = targetPageType;
+            return;
+        }
+
+        _navigationInFlight = true;
+        try
+        {
+            if (NavFrame.CurrentSourcePageType != targetPageType)
+            {
+                NavFrame.Navigate(targetPageType, null, args.RecommendedNavigationTransitionInfo);
+            }
+        }
+        finally
+        {
+            NavFrame.DispatcherQueue.TryEnqueue(() =>
+            {
+                _navigationInFlight = false;
+                if (_pendingNavigationType is { } pending && NavFrame.CurrentSourcePageType != pending)
+                {
+                    _pendingNavigationType = null;
+                    NavFrame.Navigate(pending, null, new Microsoft.UI.Xaml.Media.Animation.SuppressNavigationTransitionInfo());
+                }
+                else
+                {
+                    _pendingNavigationType = null;
+                }
+            });
         }
     }
+
+    private bool _navigationInFlight;
+    private Type? _pendingNavigationType;
 
     private void NavFrame_Navigated(object sender, NavigationEventArgs e)
     {
