@@ -329,6 +329,11 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         ObserveXamlRoot();
         ApplyResponsiveLayout(GetResponsiveContentWidth(HomeLayoutRoot.ActualWidth));
 
+        // The page is cached (NavigationCacheMode=Enabled) so returning to this tab reuses the
+        // instance. Unloaded removed this subscription, so re-attach it every time; combining
+        // an identical delegate is a no-op, so this is safe for the first load too.
+        CatalogRuntimeState.Current.CatalogChanged += RuntimeCatalogChanged;
+
         if (_isInitialized)
         {
             return;

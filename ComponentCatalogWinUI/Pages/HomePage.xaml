@@ -11,6 +11,7 @@
     HorizontalAlignment="Stretch"
     HorizontalContentAlignment="Stretch"
     MinWidth="0"
+    NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
     <Page.Resources>

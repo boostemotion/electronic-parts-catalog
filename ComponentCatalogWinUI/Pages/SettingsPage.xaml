@@ -7,6 +7,7 @@
     xmlns:local="using:ComponentCatalogWinUI.Pages"
     xmlns:service="using:ComponentCatalogWinUI.Services"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
     <ScrollViewer>
