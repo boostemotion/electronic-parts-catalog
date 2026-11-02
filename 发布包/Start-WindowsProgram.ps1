@@ -103,45 +103,29 @@ function Test-DirectoryWritable {
 function Initialize-DotnetBuildEnvironment {
     param([Parameter(Mandatory)][string]$RepositoryRoot)
 
-    # The .NET SDK creates per-user state under %USERPROFILE%\.dotnet on first run.
-    # When that path (or the NuGet/MSBuild temp directories) is not writable, fall back
-    # to repository-local directories so a double-click launch still works.
+    # The .NET SDK, NuGet and MSBuild all write per-user state on first run. Depending on the
+    # account/ACL setup those locations can be denied even when a simple write probe succeeds
+    # (for example MSBuildTemp* under %LOCALAPPDATA%\Temp). The launcher therefore always builds
+    # with repository-local caches; they are gitignored and only affect this build process.
     $env:DOTNET_NOLOGO = '1'
     $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
     $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+    $env:MSBUILDDISABLENODEREUSE = '1'
 
-    $userDotnetHome = Join-Path $env:USERPROFILE '.dotnet'
-    if (-not (Test-DirectoryWritable $userDotnetHome)) {
-        $localDotnetHome = Join-Path $RepositoryRoot '.dotnet-home'
-        New-Item -ItemType Directory -Path $localDotnetHome -Force | Out-Null
-        $env:DOTNET_CLI_HOME = $localDotnetHome
-        Write-Host "User profile is read-only for .NET; using repository-local SDK home: $localDotnetHome"
+    $localDotnetHome = Join-Path $RepositoryRoot '.dotnet-home'
+    $localNuGet = Join-Path $RepositoryRoot '.nuget-packages'
+    $localNuGetHttpCache = Join-Path $RepositoryRoot '.nuget-http-cache'
+    $localTemp = Join-Path $RepositoryRoot '.msbuild-temp'
+    foreach ($directory in @($localDotnetHome, $localNuGet, $localNuGetHttpCache, $localTemp)) {
+        New-Item -ItemType Directory -Path $directory -Force | Out-Null
     }
 
-    $userNuGet = Join-Path $env:USERPROFILE '.nuget\packages'
-    if (-not (Test-DirectoryWritable $userNuGet)) {
-        $localNuGet = Join-Path $RepositoryRoot '.nuget-packages'
-        New-Item -ItemType Directory -Path $localNuGet -Force | Out-Null
-        $env:NUGET_PACKAGES = $localNuGet
-        Write-Host "User profile is read-only for NuGet; using repository-local package cache: $localNuGet"
-    }
-
-    $userNuGetHttpCache = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'NuGet\v3-cache' } else { '' }
-    if ($userNuGetHttpCache -and -not (Test-DirectoryWritable $userNuGetHttpCache)) {
-        $localNuGetHttpCache = Join-Path $RepositoryRoot '.nuget-http-cache'
-        New-Item -ItemType Directory -Path $localNuGetHttpCache -Force | Out-Null
-        $env:NUGET_HTTP_CACHE_PATH = $localNuGetHttpCache
-        Write-Host "User profile is read-only for NuGet HTTP cache; using repository-local cache: $localNuGetHttpCache"
-    }
-
-    $tempPath = $env:TEMP
-    if (-not $tempPath -or -not (Test-DirectoryWritable $tempPath)) {
-        $localTemp = Join-Path $RepositoryRoot '.msbuild-temp'
-        New-Item -ItemType Directory -Path $localTemp -Force | Out-Null
-        $env:TEMP = $localTemp
-        $env:TMP = $localTemp
-        Write-Host "System temp is not writable; using repository-local temp directory: $localTemp"
-    }
+    $env:DOTNET_CLI_HOME = $localDotnetHome
+    $env:NUGET_PACKAGES = $localNuGet
+    $env:NUGET_HTTP_CACHE_PATH = $localNuGetHttpCache
+    $env:TEMP = $localTemp
+    $env:TMP = $localTemp
+    Write-Host "Build caches: $localDotnetHome, $localNuGet, $localTemp"
 }
 
 if ($StartupTimeoutSeconds -le 0) {
@@ -194,7 +178,12 @@ try {
         Write-Host 'Building the latest Windows Release (win-x64)...'
         & $DotnetPath build $repositoryProjectPath --configuration Release --runtime win-x64 --verbosity minimal
         if ($LASTEXITCODE -ne 0) {
-            throw "Release build failed with exit code $LASTEXITCODE."
+            if (Test-Path -LiteralPath $executable -PathType Leaf) {
+                Write-Warning "Release build failed with exit code $LASTEXITCODE; launching the existing executable instead."
+            }
+            else {
+                throw "Release build failed with exit code $LASTEXITCODE."
+            }
         }
     }
 

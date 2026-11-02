@@ -157,9 +157,7 @@ node scripts/version.mjs --write   # 同步 C#/TS/props 与发布清单
 
 **双击 `发布包/启动Windows程序.bat` 后提示 `Access to the path 'C:\Users\<用户>\.dotnet' is denied`**
 
-说明当前账户无法写入用户目录下的 .NET/NuGet 缓存。启动脚本会自动检测并回退到仓库内的
-`.dotnet-home/`、`.nuget-packages/`、`.nuget-http-cache/` 与 `.msbuild-temp/`（均已被 `.gitignore` 忽略）。
-首次使用本地缓存需要联网还原 NuGet 包，耗时较长属正常现象。
+启动脚本现在会**始终**使用仓库内的构建缓存（`.dotnet-home/`、`.nuget-packages/`、`.nuget-http-cache/`、`.msbuild-temp/`，均已被 `.gitignore` 忽略），不再依赖用户目录下的 .NET/NuGet/MSBuild 状态；构建失败时若已有可执行文件，会提示并使用现有版本启动。
 
 **启动脚本现场编译较慢**
 
