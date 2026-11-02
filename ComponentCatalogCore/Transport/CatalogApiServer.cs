@@ -95,9 +95,12 @@ public sealed class CatalogApiServer : IAsyncDisposable
         catch (HttpListenerException exception)
         {
             listener.Close();
-            var error = exception.NativeErrorCode == 5
-                ? "访问被拒绝。请以管理员身份为每个明确 URL 配置 URL ACL，或以管理员身份启动应用。"
-                : "端口已被占用，或无法绑定所选地址。";
+            var error = exception.NativeErrorCode switch
+            {
+                5 => "访问被拒绝。请以管理员身份为每个明确 URL 配置 URL ACL，或以管理员身份启动应用。",
+                6 => "系统 HTTP 服务初始化失败（错误 6）。请确认 Windows HTTP 服务正在运行；若仍失败，说明当前 .NET/Windows 组合不支持 HttpListener。",
+                _ => "端口已被占用，或无法绑定所选地址。",
+            };
             throw new InvalidOperationException($"无法启动本地 API：{string.Join("、", bindingOptions.BaseUrls)}。{error}", exception);
         }
 

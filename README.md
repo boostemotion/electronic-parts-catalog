@@ -164,6 +164,10 @@ node scripts/version.mjs --write   # 同步 C#/TS/props 与发布清单
 `发布包/` 中没有已发布的 exe 时会先执行 `dotnet build -c Release`。如需免编译分发，可先
 `dotnet publish` 生成自包含版本，或使用 [发布包/Verify-WindowsPublish.ps1](发布包/Verify-WindowsPublish.ps1) 的发布流程。
 
+**启动后提示“初始化失败：无法启动本地 API … 句柄无效”**
+
+这是当前 Windows 版本与 .NET 10 `HttpListener` 的兼容问题（错误 6，HTTP.sys 会话初始化失败），不是端口被占用。桌面端现在会继续以离线模式打开，目录浏览、搜索、编辑、导入与备份均可用；只有本机 API 与手机同步不可用。若需要手机同步，可等待后续改用不依赖 `HttpListener` 的传输实现。
+
 ## 文档
 
 - [docs/README.md](docs/README.md)：文档索引

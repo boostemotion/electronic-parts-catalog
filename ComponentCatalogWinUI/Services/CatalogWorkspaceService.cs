@@ -56,7 +56,19 @@ public sealed class CatalogWorkspaceService : ICatalogRestoreLifecycle
 
             if (ApiServer is null)
             {
-                await StartConfiguredApiWithFallbackCoreAsync(CatalogStoragePaths.ReadLanSettings());
+                // The local API is optional. Some Windows/.NET combinations cannot start
+                // HttpListener at all (for example a broken HTTP.sys session); the catalog
+                // itself must remain usable offline, so API failures never block startup.
+                try
+                {
+                    await StartConfiguredApiWithFallbackCoreAsync(CatalogStoragePaths.ReadLanSettings());
+                }
+                catch (Exception exception)
+                {
+                    _apiStartupError = exception.Message;
+                    AppLogger.WriteStartup($"Api.Startup.Error {exception}");
+                    CatalogRuntimeState.Current.UpdateApiUnavailable($"本地 API 不可用：{exception.Message}。目录仍可离线使用。");
+                }
             }
         }
         finally
@@ -347,8 +359,17 @@ public sealed class CatalogWorkspaceService : ICatalogRestoreLifecycle
                 ApiPort = settings.ApiPort,
                 DiscoveryPort = settings.DiscoveryPort,
             };
-            await StartApiCoreAsync(disabledSettings, "手机访问启动失败；已恢复仅本机访问。请检查高级诊断中的 URL ACL 和 Windows 防火墙。");
-            CatalogStoragePaths.SaveLanSettings(disabledSettings);
+            try
+            {
+                await StartApiCoreAsync(disabledSettings, "手机访问启动失败；已恢复仅本机访问。请检查高级诊断中的 URL ACL 和 Windows 防火墙。");
+                CatalogStoragePaths.SaveLanSettings(disabledSettings);
+            }
+            catch (Exception recoveryException)
+            {
+                _apiStartupError = recoveryException.Message;
+                AppLogger.WriteStartup($"Api.LoopbackRecovery.Error {recoveryException}");
+                CatalogRuntimeState.Current.UpdateApiUnavailable($"本地 API 不可用：{recoveryException.Message}。目录仍可离线使用。");
+            }
         }
         catch (Exception exception)
         {
