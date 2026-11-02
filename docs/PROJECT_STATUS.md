@@ -40,6 +40,13 @@
 - **深色主题**：`index.css` 增加完整的 `prefers-color-scheme: dark` 调色板（surface/on-surface/primary/error/inverse 等 20+ 变量），`surface-mix` 统一替代硬编码白色混合，snackbar 改用 inverse 色；`index.html` 提供双 `theme-color`；原生侧增加 `values-night/colors.xml`，`MainActivity` 根据 `UI_MODE_NIGHT` 自动切换系统栏图标明暗；更新/错误/状态徽标均有暗色适配。
 - **动效细调**：动效 token 收敛为 90–300ms 分级（short2 90ms、medium2 220ms、medium4 300ms）；页面转场位移 40→24px、卡片阶梯 30ms×10→18ms×8（封顶 144ms）、卡片位移 20→12px、弹层进出 400/250→300/180ms、按压缩放 0.97→0.985、导航图标 1.1→1.06；均保留 `prefers-reduced-motion` 降级。
 
+## WinUI 性能与交互优化（2026-11-02）
+
+- **筛选结果批量替换**：`FilteredItems` 由逐项 `Clear/Add` 的 `ObservableCollection` 改为一次性替换的只读列表，侧边栏切换分类时 GridView 只重建一次（原来每移除/添加一条都会触发容器回收），显著降低卡顿。
+- **筛选切换动效**：新增 `UiMotion.PlayListRefresh`，分类切换后对结果区做 150–170ms 的淡入 + 轻微上移动画，替代原来“元件直接消失”的生硬切换；搜索输入时不做该动画以免干扰。
+- **侧边栏事件去抖**：刷新子类列表时临时抑制 ComboBox 的 `SelectionChanged`，避免一次点击触发多轮筛选；编辑面板的大类/子类刷新增加递归保护。
+- **侧边栏下拉复用**：封装与持有状态 ComboBox 的 `ItemsSource` 只在首次绑定，不再每次筛选都重设，减少无谓的列表重建。
+
 ## 环境限制（摘要，详见验证记录）
 
 - 本机 .NET 10 HttpListener 与 Windows 11 build 26200 不兼容，13 个 API 测试无法在本机跑通（非 URL ACL、非代码问题）。

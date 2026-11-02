@@ -116,7 +116,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         Unloaded += HomePage_Unloaded;
     }
 
-    public ObservableCollection<ComponentItem> FilteredItems { get; } = [];
+    public IReadOnlyList<ComponentItem> FilteredItems { get; private set; } = [];
 
     public ObservableCollection<string> AvailablePackages { get; } = [AllPackagesLabel];
 
@@ -735,38 +735,63 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
     private void RefreshSubcategoryFilters()
     {
-        SubcategoryFilters.Clear();
-        SubcategoryFilters.Add(new CategoryChoice(string.Empty, "全部"));
-        var major = ComponentCategoryTaxonomy.FindMajor(SelectedMajorCategoryId);
-        if (major is not null)
+        // Mutating the bound ItemsSource raises SelectionChanged on the sidebar ComboBox.
+        // Suppress those handlers so one category click does not trigger a second filter pass.
+        _isSyncingLocalSidebar = true;
+        try
         {
-            foreach (var subcategory in major.Subcategories)
+            SubcategoryFilters.Clear();
+            SubcategoryFilters.Add(new CategoryChoice(string.Empty, "全部"));
+            var major = ComponentCategoryTaxonomy.FindMajor(SelectedMajorCategoryId);
+            if (major is not null)
             {
-                SubcategoryFilters.Add(new CategoryChoice(subcategory.Id, subcategory.Label));
+                foreach (var subcategory in major.Subcategories)
+                {
+                    SubcategoryFilters.Add(new CategoryChoice(subcategory.Id, subcategory.Label));
+                }
+            }
+
+            if (!SubcategoryFilters.Any(choice => string.Equals(choice.Id, SelectedSubCategoryId, StringComparison.Ordinal)))
+            {
+                SelectedSubCategoryId = string.Empty;
             }
         }
-
-        if (!SubcategoryFilters.Any(choice => string.Equals(choice.Id, SelectedSubCategoryId, StringComparison.Ordinal)))
+        finally
         {
-            SelectedSubCategoryId = string.Empty;
+            _isSyncingLocalSidebar = false;
         }
 
         OnPropertyChanged(nameof(IsSubcategoryFilterEnabled));
     }
 
+    private bool _isRefreshingEditorSubcategories;
+
     private void RefreshEditorSubcategories()
     {
-        EditorSubcategories.Clear();
-        var major = ComponentCategoryTaxonomy.FindMajor(EditableMajorCategoryId)
-            ?? ComponentCategoryTaxonomy.FindMajor(ComponentCategoryTaxonomy.OtherMajorCategoryId)!;
-        foreach (var subcategory in major.Subcategories)
+        if (_isRefreshingEditorSubcategories)
         {
-            EditorSubcategories.Add(new CategoryChoice(subcategory.Id, subcategory.Label));
+            return;
         }
 
-        if (!EditorSubcategories.Any(choice => string.Equals(choice.Id, EditableSubCategoryId, StringComparison.Ordinal)))
+        _isRefreshingEditorSubcategories = true;
+        try
         {
-            EditableSubCategoryId = major.Subcategories.First().Id;
+            EditorSubcategories.Clear();
+            var major = ComponentCategoryTaxonomy.FindMajor(EditableMajorCategoryId)
+                ?? ComponentCategoryTaxonomy.FindMajor(ComponentCategoryTaxonomy.OtherMajorCategoryId)!;
+            foreach (var subcategory in major.Subcategories)
+            {
+                EditorSubcategories.Add(new CategoryChoice(subcategory.Id, subcategory.Label));
+            }
+
+            if (!EditorSubcategories.Any(choice => string.Equals(choice.Id, EditableSubCategoryId, StringComparison.Ordinal)))
+            {
+                EditableSubCategoryId = major.Subcategories.First().Id;
+            }
+        }
+        finally
+        {
+            _isRefreshingEditorSubcategories = false;
         }
     }
 
@@ -851,7 +876,7 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
                 return;
             }
 
-            await RefreshFilteredItemsAsync();
+            await RefreshFilteredItemsAsync(animate: false);
         }
         catch (Exception ex)
         {
@@ -859,9 +884,8 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         }
     }
 
-    private Task RefreshFilteredItemsAsync(string? preferredSelectionId = null)
+    private Task RefreshFilteredItemsAsync(string? preferredSelectionId = null, bool animate = true)
     {
-        FilteredItems.Clear();
         var currentSelectionId = preferredSelectionId ?? SelectedItem?.Id;
         var results = CatalogSearchService.Search(_allRecords, new SearchQuery
         {
@@ -874,19 +898,32 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             AttributeText = string.IsNullOrWhiteSpace(AttributeFilterText) ? null : AttributeFilterText.Trim(),
         });
 
+        // Build the new result set first and swap it in as a single ItemsSource reset.
+        // Clearing and re-adding one item at a time made every sidebar change rebuild the
+        // GridView containers repeatedly, which caused the lag and the abrupt disappearing cards.
+        var nextItems = new List<ComponentItem>(results.Count);
         foreach (var result in results)
         {
             if (_itemsById.TryGetValue(result.Component.Id, out var item))
-        {
-                FilteredItems.Add(item);
+            {
+                nextItems.Add(item);
             }
         }
+
+        FilteredItems = nextItems;
+        OnPropertyChanged(nameof(FilteredItems));
 
         var nextSelection = currentSelectionId is null
             ? null
             : FilteredItems.FirstOrDefault(item => item.Id == currentSelectionId);
         SelectItem(nextSelection);
         NotifyFilteredResultsStateChanged();
+
+        if (animate)
+        {
+            UiMotion.PlayListRefresh(ComponentGrid);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -1383,13 +1420,19 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
             if (SidebarPackageComboBox is not null)
             {
-                SidebarPackageComboBox.ItemsSource = AvailablePackages;
+                if (!ReferenceEquals(SidebarPackageComboBox.ItemsSource, AvailablePackages))
+                {
+                    SidebarPackageComboBox.ItemsSource = AvailablePackages;
+                }
                 SidebarPackageComboBox.SelectedItem = SelectedPackageFilter;
             }
 
             if (SidebarOwnedComboBox is not null)
             {
-                SidebarOwnedComboBox.ItemsSource = OwnershipOptions;
+                if (!ReferenceEquals(SidebarOwnedComboBox.ItemsSource, OwnershipOptions))
+                {
+                    SidebarOwnedComboBox.ItemsSource = OwnershipOptions;
+                }
                 SidebarOwnedComboBox.SelectedItem = SelectedOwnershipFilter;
             }
 
