@@ -55,7 +55,6 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
     private const double DockedEditorPaneWidth = 360;
 
     private readonly Flyout _filterFlyout = new();
-    private ContentDialog? _editorOverlay;
     private bool _isEditorOverlayOpen;
     private bool _isEditorRequested;
     private bool _restoreFilterPaneAfterFlyoutCloses;
@@ -424,23 +423,47 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         if (_isSynchronizingGridSelection)
         {
             return;
-    }
+        }
 
         if (sender is GridView gridView && gridView.SelectedItem is ComponentItem item)
-    {
-            SelectItem(item, synchronizeGridSelection: false);
-            RequestEditor();
-            await ShowEditorOverlayIfNarrowAsync();
+        {
+            try
+            {
+                SelectItem(item, synchronizeGridSelection: false);
+                RequestEditor();
+                await ShowEditorOverlayIfNarrowAsync();
+            }
+            catch (Exception ex)
+            {
+                AppLogger.WritePage($"ComponentGrid.SelectionChanged.Error {ex}");
+                LastActionText = $"打开元件详情失败：{ex.Message}";
+            }
         }
     }
 
     private async void ComponentCard_PointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (sender is FrameworkElement element && element.DataContext is ComponentItem item)
+        if (sender is not FrameworkElement element || element.DataContext is not ComponentItem item)
         {
-            SelectItem(item);
+            return;
+        }
+
+        try
+        {
+            // Clicking the already selected card only re-opens the editor; running selection again
+            // while the narrow-layout ContentDialog is opening can race with its ShowAsync.
+            if (!ReferenceEquals(SelectedItem, item))
+            {
+                SelectItem(item);
+            }
+
             RequestEditor();
             await ShowEditorOverlayIfNarrowAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.WritePage($"ComponentCard.PointerPressed.Error {ex}");
+            LastActionText = $"打开元件详情失败：{ex.Message}";
         }
     }
 
@@ -1200,13 +1223,13 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
 
         if (!isDocked)
         {
-            MoveEditorPaneToOverlay();
+            // Narrow layouts host the editor in a ContentDialog while it is open; the pane
+            // stays attached to the page otherwise so it is never parked inside a hidden dialog.
             return;
         }
 
         if (_isEditorOverlayOpen)
         {
-            _editorOverlay?.Hide();
             return;
         }
 
@@ -1214,22 +1237,6 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
         {
             MoveEditorPaneToLayout();
         }
-        else
-        {
-            MoveEditorPaneToOverlay();
-        }
-    }
-
-    private void MoveEditorPaneToOverlay()
-    {
-        EnsureEditorOverlay();
-        if (ReferenceEquals(_editorOverlay!.Content, EditorPane))
-        {
-            return;
-        }
-
-        HomeLayoutRoot.Children.Remove(EditorPane);
-        _editorOverlay.Content = EditorPane;
     }
 
     private void MoveEditorPaneToLayout()
@@ -1239,23 +1246,11 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             return;
         }
 
-        if (ReferenceEquals(_editorOverlay?.Content, EditorPane))
+        if (!HomeLayoutRoot.Children.Contains(EditorPane))
         {
-            _editorOverlay.Content = null;
+            Grid.SetColumn(EditorPane, 2);
+            HomeLayoutRoot.Children.Add(EditorPane);
         }
-
-        HomeLayoutRoot.Children.Remove(EditorPane);
-        Grid.SetColumn(EditorPane, 2);
-        HomeLayoutRoot.Children.Add(EditorPane);
-    }
-
-    private void EnsureEditorOverlay()
-    {
-        _editorOverlay ??= new ContentDialog
-        {
-            CloseButtonText = "关闭",
-            FullSizeDesired = true,
-        };
     }
 
     private async Task ShowEditorOverlayIfNarrowAsync()
@@ -1265,17 +1260,35 @@ public sealed partial class HomePage : Page, INotifyPropertyChanged
             return;
         }
 
-        EnsureEditorOverlay();
-        MoveEditorPaneToOverlay();
-        _editorOverlay!.XamlRoot = XamlRoot;
+        HomeLayoutRoot.Children.Remove(EditorPane);
+        var dialog = new ContentDialog
+        {
+            CloseButtonText = "关闭",
+            FullSizeDesired = true,
+            XamlRoot = XamlRoot,
+            Content = EditorPane,
+        };
+
         _isEditorOverlayOpen = true;
         try
         {
-            await _editorOverlay.ShowAsync();
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            AppLogger.WritePage($"EditorOverlay.Show.Error {ex}");
+            LastActionText = $"无法打开编辑面板：{ex.Message}";
         }
         finally
         {
+            dialog.Content = null;
             _isEditorOverlayOpen = false;
+            if (HomeLayoutRoot is not null && !HomeLayoutRoot.Children.Contains(EditorPane))
+            {
+                Grid.SetColumn(EditorPane, 2);
+                HomeLayoutRoot.Children.Add(EditorPane);
+            }
+
             if (IsDockedEditorLayout(_responsiveLayout))
             {
                 UpdateEditorPanePlacement();
