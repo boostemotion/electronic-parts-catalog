@@ -14,26 +14,37 @@ public static class UiMotion
         var uiSettings = new UISettings();
         if (!uiSettings.AnimationsEnabled) return;
 
-        var visual = ElementCompositionPreview.GetElementVisual(element);
-        var compositor = visual.Compositor;
+        try
+        {
+            // Translation is an opt-in composition property on XAML elements. Animating "Offset"
+            // instead would override the layout offset and drag the element to the window origin.
+            ElementCompositionPreview.SetIsTranslationEnabled(element, true);
 
-        var translation = compositor.CreateVector3KeyFrameAnimation();
-        translation.InsertKeyFrame(0.0f, new Vector3(fromRight ? 40f : -40f, 0, 0));
-        translation.InsertKeyFrame(1.0f, new Vector3(0, 0, 0));
-        translation.Duration = TimeSpan.FromMilliseconds(280);
-        translation.Target = "Translation";
+            var visual = ElementCompositionPreview.GetElementVisual(element);
+            var compositor = visual.Compositor;
 
-        var opacity = compositor.CreateScalarKeyFrameAnimation();
-        opacity.InsertKeyFrame(0.0f, 0.0f);
-        opacity.InsertKeyFrame(1.0f, 1.0f);
-        opacity.Duration = TimeSpan.FromMilliseconds(220);
-        opacity.Target = "Opacity";
+            var translation = compositor.CreateVector3KeyFrameAnimation();
+            translation.InsertKeyFrame(0.0f, new Vector3(fromRight ? 40f : -40f, 0, 0));
+            translation.InsertKeyFrame(1.0f, new Vector3(0, 0, 0));
+            translation.Duration = TimeSpan.FromMilliseconds(280);
+            translation.Target = "Translation";
 
-        var group = compositor.CreateAnimationGroup();
-        group.Add(translation);
-        group.Add(opacity);
+            var opacity = compositor.CreateScalarKeyFrameAnimation();
+            opacity.InsertKeyFrame(0.0f, 0.0f);
+            opacity.InsertKeyFrame(1.0f, 1.0f);
+            opacity.Duration = TimeSpan.FromMilliseconds(220);
+            opacity.Target = "Opacity";
 
-        ElementCompositionPreview.SetImplicitShowAnimation(element, group);
+            var group = compositor.CreateAnimationGroup();
+            group.Add(translation);
+            group.Add(opacity);
+
+            ElementCompositionPreview.SetImplicitShowAnimation(element, group);
+        }
+        catch (Exception exception)
+        {
+            AppLogger.WritePage($"UiMotion.ConfigurePanelMotion error: {exception.Message}");
+        }
     }
 
     /// <summary>
@@ -56,18 +67,16 @@ public static class UiMotion
         PlayFade(element, 0.0f, 10f, 120, 150);
     }
 
-    /// <summary>
-    /// Fades and lifts an element using composition properties that actually exist.
-    /// A Visual exposes "Offset" and "Opacity", but not "Translation" — animating "Translation"
-    /// throws E_INVALIDARG (0x80070057), which WinUI re-throws through COM and turns into a
-    /// process-level crash.
-    /// </summary>
     private static void PlayFade(UIElement element, float fromOpacity, float lift, int fadeMilliseconds, int slideMilliseconds)
     {
         try
         {
             var uiSettings = new UISettings();
             if (!uiSettings.AnimationsEnabled) return;
+
+            // Use the opt-in Translation property, not Offset: Offset carries the element's
+            // layout position, so animating it makes the element render at the window origin.
+            ElementCompositionPreview.SetIsTranslationEnabled(element, true);
 
             var visual = ElementCompositionPreview.GetElementVisual(element);
             var compositor = visual.Compositor;
@@ -78,15 +87,15 @@ public static class UiMotion
             opacity.Duration = TimeSpan.FromMilliseconds(fadeMilliseconds);
             visual.StartAnimation("Opacity", opacity);
 
-            var offset = compositor.CreateVector3KeyFrameAnimation();
-            offset.InsertKeyFrame(0.0f, new Vector3(0, lift, 0));
-            offset.InsertKeyFrame(1.0f, Vector3.Zero);
-            offset.Duration = TimeSpan.FromMilliseconds(slideMilliseconds);
-            visual.StartAnimation("Offset", offset);
+            var translation = compositor.CreateVector3KeyFrameAnimation();
+            translation.InsertKeyFrame(0.0f, new Vector3(0, lift, 0));
+            translation.InsertKeyFrame(1.0f, Vector3.Zero);
+            translation.Duration = TimeSpan.FromMilliseconds(slideMilliseconds);
+            visual.StartAnimation("Translation", translation);
         }
         catch (Exception exception)
         {
-            AppLogger.WritePage($"UiMotion error: {exception.Message}");
+            AppLogger.WritePage($"UiMotion.PlayFade error: {exception.Message}");
         }
     }
 }

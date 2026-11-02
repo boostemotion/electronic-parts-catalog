@@ -56,14 +56,9 @@ public partial class App : Application
             return;
         }
 
-        // These are expected on this machine and already reported through the normal paths.
+        // Expected on machines where HttpListener cannot initialise; already reported via
+        // Api.Startup.Error. Filtering keeps the log readable without hiding real failures.
         if (exception is System.Net.HttpListenerException)
-        {
-            return;
-        }
-
-        if (exception is InvalidOperationException invalidOperation &&
-            invalidOperation.Message.Contains("本地 API", StringComparison.Ordinal))
         {
             return;
         }

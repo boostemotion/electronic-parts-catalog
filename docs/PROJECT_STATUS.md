@@ -52,10 +52,11 @@
 依据 Windows 错误报告（WER）三次崩溃签名完全一致（`combase.dll` / `0x80070057` E_INVALIDARG），确认是 XAML 回调中抛出的托管异常被 COM 层重抛导致的进程终止，而非端口或数据问题。修复内容：
 
 - **导航转场**：移除框架 `NavigationThemeTransition`，所有导航显式传入 `SuppressNavigationTransitionInfo`，改由 `UiMotion.PlayPageSwap` 做 120–150ms 交叉淡入。框架转场在快速连点时被反复中断会直接崩溃，同时旧页面残影会留在屏幕上。
-- **动效属性修正（真正的崩溃根因）**：`Visual.StartAnimation("Translation", …)` 非法——`Visual` 没有 `Translation` 属性（它属于 `CompositionPropertySet`），会抛 `ArgumentException`「参数错误」(E_INVALIDARG)，并被 XAML 经 COM 重抛终结进程。改用合法的 `"Offset"` 属性后崩溃消失。
+- **动效属性修正（崩溃 + 布局错乱的共同根因）**：`Visual` 没有可动画的 `Translation` 属性，必须先调用 `ElementCompositionPreview.SetIsTranslationEnabled(element, true)` 才能动画 `"Translation"`；否则抛 `ArgumentException`「参数错误」(E_INVALIDARG)，经 XAML/COM 重抛后终结进程（这正是三次闪退的来源）。而改用 `"Offset"` 虽然不崩，却会覆盖元素的布局偏移，把右侧编辑面板“吸”到窗口左上角，造成与筛选栏重叠——最终统一使用启用后的 `Translation`。
+- **编辑面板布局重写**：编辑面板不再重挂载进 `ContentDialog`（跨宿主重挂载会留下错误的 visual parent）。宽屏时停靠第 3 列，窄屏时占据结果区域并隐藏列表；`EditorPane` 默认 `Collapsed`，仅在需要时显示，避免 0 宽列仍绘制子元素导致的叠层。
 - **目录变更订阅**：改为单例静态入口（`HomePage.NotifyActiveInstanceCatalogChanged`），不再按页面实例订阅，避免页面缓存重建后出现多个监听器、并发替换 GridView `ItemsSource`。
 - **列表刷新串行化**：`ReloadAllItemsAsync` 增加 `SemaphoreSlim` 门闩，重叠刷新会让 XAML 在布局过程中两次替换 `ItemsSource`。
-- **元素重挂载安全**：新增 `DetachFromCurrentParent`，在把 `FilterPane`/`EditorPane` 移入 Flyout 或 ContentDialog 前先从当前宿主摘除。WinUI 对「已有父节点的元素被加入新宿主」抛 E_INVALIDARG，且该异常经 COM 重抛会杀掉进程。
+- **元素重挂载安全**：`FilterPane` 在移入/移出 Flyout 前先从当前宿主摘除（`DetachFromCurrentParent`）；WinUI 对「已有父节点的元素被加入新宿主」抛 E_INVALIDARG，且该异常经 COM 重抛会杀掉进程。
 - **转换器容错**：`SelectedCardValueConverter` 改用 `TryGetValue` + 回退画刷，转换器内异常不再逃逸到 XAML 引擎。
 - **全局异常兜底**：`App.UnhandledException` 标记 `e.Handled = true`；新增首现异常（`FirstChanceException`）日志，可在 XAML 吞掉异常前捕获原始堆栈——这是定位本类崩溃的唯一手段。
 - **自动化回归**：新增基于 UI Automation 的回归脚本（`.hermes-work/uiauto/`），可脚本化复现「快速切换侧边栏」「点击设置」「点击元件卡片」三条崩溃路径并断言进程存活。

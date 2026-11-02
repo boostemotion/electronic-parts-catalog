@@ -402,11 +402,12 @@
         </Border>
     </Grid>
 
-        <!-- This one editor host is reparented into the narrow-layout ContentDialog. -->
+    <!-- This one editor host is reparented into the narrow-layout ContentDialog. -->
     <Border
             x:Name="EditorPane"
             Grid.Column="2"
             MinWidth="0"
+            Visibility="Collapsed"
             Style="{StaticResource SidebarSurfaceStyle}">
             <ScrollViewer
                 Padding="4,4,8,4"
