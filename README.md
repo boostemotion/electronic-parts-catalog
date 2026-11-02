@@ -153,6 +153,19 @@ node scripts/version.mjs --write   # 同步 C#/TS/props 与发布清单
 
 > 13 个 `CatalogApiServerTests` 在当前开发机受 .NET 10 `HttpListener` 与 Windows 11 兼容问题阻塞；详见 [docs/verification/2026-11-01-verification.md](docs/verification/2026-11-01-verification.md)。
 
+## 常见问题
+
+**双击 `发布包/启动Windows程序.bat` 后提示 `Access to the path 'C:\Users\<用户>\.dotnet' is denied`**
+
+说明当前账户无法写入用户目录下的 .NET/NuGet 缓存。启动脚本会自动检测并回退到仓库内的
+`.dotnet-home/`、`.nuget-packages/`、`.nuget-http-cache/` 与 `.msbuild-temp/`（均已被 `.gitignore` 忽略）。
+首次使用本地缓存需要联网还原 NuGet 包，耗时较长属正常现象。
+
+**启动脚本现场编译较慢**
+
+`发布包/` 中没有已发布的 exe 时会先执行 `dotnet build -c Release`。如需免编译分发，可先
+`dotnet publish` 生成自包含版本，或使用 [发布包/Verify-WindowsPublish.ps1](发布包/Verify-WindowsPublish.ps1) 的发布流程。
+
 ## 文档
 
 - [docs/README.md](docs/README.md)：文档索引

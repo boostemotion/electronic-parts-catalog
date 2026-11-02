@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
     [string]$ExecutablePath,
@@ -83,6 +83,67 @@ function Throw-StartupExit {
     throw "Windows app exited during startup with code $($Process.ExitCode).$details"
 }
 
+function Test-DirectoryWritable {
+    param([Parameter(Mandatory)][string]$Path)
+
+    try {
+        if (-not (Test-Path -LiteralPath $Path -PathType Container)) {
+            New-Item -ItemType Directory -Path $Path -Force -ErrorAction Stop | Out-Null
+        }
+        $probe = Join-Path $Path ('.write-probe-' + [guid]::NewGuid().ToString('N'))
+        [System.IO.File]::WriteAllText($probe, '')
+        Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
+function Initialize-DotnetBuildEnvironment {
+    param([Parameter(Mandatory)][string]$RepositoryRoot)
+
+    # The .NET SDK creates per-user state under %USERPROFILE%\.dotnet on first run.
+    # When that path (or the NuGet/MSBuild temp directories) is not writable, fall back
+    # to repository-local directories so a double-click launch still works.
+    $env:DOTNET_NOLOGO = '1'
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT = '1'
+    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE = '1'
+
+    $userDotnetHome = Join-Path $env:USERPROFILE '.dotnet'
+    if (-not (Test-DirectoryWritable $userDotnetHome)) {
+        $localDotnetHome = Join-Path $RepositoryRoot '.dotnet-home'
+        New-Item -ItemType Directory -Path $localDotnetHome -Force | Out-Null
+        $env:DOTNET_CLI_HOME = $localDotnetHome
+        Write-Host "User profile is read-only for .NET; using repository-local SDK home: $localDotnetHome"
+    }
+
+    $userNuGet = Join-Path $env:USERPROFILE '.nuget\packages'
+    if (-not (Test-DirectoryWritable $userNuGet)) {
+        $localNuGet = Join-Path $RepositoryRoot '.nuget-packages'
+        New-Item -ItemType Directory -Path $localNuGet -Force | Out-Null
+        $env:NUGET_PACKAGES = $localNuGet
+        Write-Host "User profile is read-only for NuGet; using repository-local package cache: $localNuGet"
+    }
+
+    $userNuGetHttpCache = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA 'NuGet\v3-cache' } else { '' }
+    if ($userNuGetHttpCache -and -not (Test-DirectoryWritable $userNuGetHttpCache)) {
+        $localNuGetHttpCache = Join-Path $RepositoryRoot '.nuget-http-cache'
+        New-Item -ItemType Directory -Path $localNuGetHttpCache -Force | Out-Null
+        $env:NUGET_HTTP_CACHE_PATH = $localNuGetHttpCache
+        Write-Host "User profile is read-only for NuGet HTTP cache; using repository-local cache: $localNuGetHttpCache"
+    }
+
+    $tempPath = $env:TEMP
+    if (-not $tempPath -or -not (Test-DirectoryWritable $tempPath)) {
+        $localTemp = Join-Path $RepositoryRoot '.msbuild-temp'
+        New-Item -ItemType Directory -Path $localTemp -Force | Out-Null
+        $env:TEMP = $localTemp
+        $env:TMP = $localTemp
+        Write-Host "System temp is not writable; using repository-local temp directory: $localTemp"
+    }
+}
+
 if ($StartupTimeoutSeconds -le 0) {
     throw 'StartupTimeoutSeconds must be greater than zero.'
 }
@@ -126,6 +187,9 @@ try {
         }
 
         Stop-TargetProcess -TargetExecutablePath $executable
+
+        $repositoryRoot = Split-Path -Parent (Split-Path -Parent $repositoryProjectPath)
+        Initialize-DotnetBuildEnvironment -RepositoryRoot $repositoryRoot
 
         Write-Host 'Building the latest Windows Release (win-x64)...'
         & $DotnetPath build $repositoryProjectPath --configuration Release --runtime win-x64 --verbosity minimal

@@ -100,6 +100,12 @@ ComponentCatalogData/Logs/
 # Project-local agent toolchains, caches, secrets, and transient artifacts
 .hermes-work/
 
+# Fallback build caches used when the user profile is not writable
+.dotnet-home/
+.nuget-packages/
+.nuget-http-cache/
+.msbuild-temp/
+
 # Hermes runtime residue; plans, Markdown documents, and scripts stay visible
 .hermes/publish-resource-*/
 .hermes/publish*.out
