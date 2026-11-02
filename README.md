@@ -164,6 +164,16 @@ node scripts/version.mjs --write   # 同步 C#/TS/props 与发布清单
 `发布包/` 中没有已发布的 exe 时会先执行 `dotnet build -c Release`。如需免编译分发，可先
 `dotnet publish` 生成自包含版本，或使用 [发布包/Verify-WindowsPublish.ps1](发布包/Verify-WindowsPublish.ps1) 的发布流程。
 
+**双击 `发布包/启动Windows程序.bat` 每次提示“打开文件 - 安全警告 / 无法验证发布者”**
+
+这是 Windows 对来自网络的 `.bat` 添加的 Mark-of-the-Web 标记，不是程序签名问题。下载仓库压缩包后请先解压，再在解压目录执行一次：
+
+```powershell
+Get-ChildItem "D:\b1497\Downloads\入库" -Recurse | Unblock-File
+```
+
+或右键该 bat → 属性 → 勾选“解除锁定”→ 确定。仓库内文件已全部解除，正常双击不会再弹；请勿直接在压缩包预览窗口里双击运行。
+
 **启动后提示“初始化失败：无法启动本地 API … 句柄无效”**
 
 这是当前 Windows 版本与 .NET 10 `HttpListener` 的兼容问题（错误 6，HTTP.sys 会话初始化失败），不是端口被占用。桌面端现在会继续以离线模式打开，目录浏览、搜索、编辑、导入与备份均可用；只有本机 API 与手机同步不可用。若需要手机同步，可等待后续改用不依赖 `HttpListener` 的传输实现。
