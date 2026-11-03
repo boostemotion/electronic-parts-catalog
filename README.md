@@ -164,15 +164,22 @@ node scripts/version.mjs --write   # 同步 C#/TS/props 与发布清单
 `发布包/` 中没有已发布的 exe 时会先执行 `dotnet build -c Release`。如需免编译分发，可先
 `dotnet publish` 生成自包含版本，或使用 [发布包/Verify-WindowsPublish.ps1](发布包/Verify-WindowsPublish.ps1) 的发布流程。
 
-**双击 `发布包/启动Windows程序.bat` 每次提示“打开文件 - 安全警告 / 无法验证发布者”**
+**双击启动时提示“打开文件 - 安全警告”或“Windows 已保护你的电脑”**
 
-这是 Windows 对来自网络的 `.bat` 添加的 Mark-of-the-Web 标记，不是程序签名问题。下载仓库压缩包后请先解压，再在解压目录执行一次：
+推荐：运行一次 [发布包/一键解除启动提示.bat](发布包/一键解除启动提示.bat)（会请求管理员权限）。
+它会关闭对本地脚本/程序的安全提示与 SmartScreen 检测，并把仓库加入 Defender 排除目录。
+之后双击桌面「电子元件入库台」图标即可，全程无弹窗。
+
+更快的方式：`发布包/Windows/ComponentCatalogWinUI.exe` 是自包含发布版，直接双击运行，无需构建，
+也可为它手动创建桌面快捷方式（数据自动定位到仓库 `ComponentCatalogData/`，与开发库一致）。
+
+如果只想手动解除（管理员 PowerShell）：
 
 ```powershell
 Get-ChildItem "D:\b1497\Downloads\入库" -Recurse | Unblock-File
+Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Associations' -Name LowRiskFileTypes -Value '.bat;.cmd;.exe;.lnk;.ps1'
+Set-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer' -Name SmartScreenEnabled -Value 'Off'
 ```
-
-或右键该 bat → 属性 → 勾选“解除锁定”→ 确定。仓库内文件已全部解除，正常双击不会再弹；请勿直接在压缩包预览窗口里双击运行。
 
 **启动后提示“初始化失败：无法启动本地 API … 句柄无效”**
 
